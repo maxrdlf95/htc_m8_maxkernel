@@ -115,6 +115,27 @@ static inline long freezable_schedule_timeout_interruptible(long timeout)
 	freezer_count();						\
 })
 
+/* Like schedule_timeout(), but should not block the freezer. */
+#define freezable_schedule_timeout(timeout)				\
+({									\
+	long __retval;							\
+	freezer_do_not_count();						\
+	__retval = schedule_timeout(timeout);				\
+	freezer_count();						\
+	__retval;							\
+})
+
+/* Like schedule_timeout_interruptible(), but should not block the freezer. */
+#define freezable_schedule_timeout_interruptible(timeout)		\
+({									\
+	long __retval;							\
+	freezer_do_not_count();						\
+	__retval = schedule_timeout_interruptible(timeout);		\
+	freezer_count();						\
+	__retval;							\
+})
+
+/* Like schedule_timeout_killable(), but should not block the freezer. */
 #define freezable_schedule_timeout_killable(timeout)			\
 ({									\
 	long __retval;							\
@@ -124,6 +145,21 @@ static inline long freezable_schedule_timeout_interruptible(long timeout)
 	__retval;							\
 })
 
+/* Like schedule_hrtimeout_range(), but should not block the freezer. */
+#define freezable_schedule_hrtimeout_range(expires, delta, mode)	\
+({									\
+	int __retval;							\
+	freezer_do_not_count();						\
+	__retval = schedule_hrtimeout_range(expires, delta, mode);	\
+	freezer_count();						\
+	__retval;							\
+})
+
+/*
+ * Freezer-friendly wrappers around wait_event_interruptible(),
+ * wait_event_killable() and wait_event_interruptible_timeout(), originally
+ * defined in <linux/wait.h>
+ */
 
 #define wait_event_freezekillable(wq, condition)			\
 ({									\
@@ -187,14 +223,22 @@ static inline void set_freezable(void) {}
 #define freezable_schedule_timeout_interruptible(timeout)		\
 	schedule_timeout_interruptible(timeout)
 
+
+/* Like schedule_timeout_killable(), but should not block the freezer. */
 #define freezable_schedule_timeout_killable(timeout)			\
 	schedule_timeout_killable(timeout)
+
+#define freezable_schedule_hrtimeout_range(expires, delta, mode)	\
+	schedule_hrtimeout_range(expires, delta, mode)
 
 #define wait_event_freezable(wq, condition)				\
 		wait_event_interruptible(wq, condition)
 
 #define wait_event_freezable_timeout(wq, condition, timeout)		\
 		wait_event_interruptible_timeout(wq, condition, timeout)
+
+#define wait_event_freezable_exclusive(wq, condition)			\
+		wait_event_interruptible_exclusive(wq, condition)
 
 #define wait_event_freezekillable(wq, condition)		\
 		wait_event_killable(wq, condition)
