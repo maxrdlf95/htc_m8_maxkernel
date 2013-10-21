@@ -281,6 +281,10 @@ struct rq {
 #endif
 	int skip_clock_update;
 
+	/* time-based average load */
+	u64 nr_last_stamp;
+	unsigned int ave_nr_running;
+
 	/* capture load from *all* tasks on this cpu: */
 	struct load_weight load;
 	unsigned long nr_load_updates;
@@ -768,6 +772,7 @@ extern void cpuacct_charge(struct task_struct *tsk, u64 cputime);
 static inline void cpuacct_charge(struct task_struct *tsk, u64 cputime) {}
 #endif
 
+<<<<<<< HEAD
 #ifdef CONFIG_INTELLI_PLUG
 static inline unsigned int do_avg_nr_running(struct rq *rq)
 {
@@ -788,12 +793,39 @@ static inline unsigned int do_avg_nr_running(struct rq *rq)
 	return ave_nr_running;
 }
 #endif
+=======
+/* 27 ~= 134217728ns = 134.2ms
+ * 26 ~=  67108864ns =  67.1ms
+ * 25 ~=  33554432ns =  33.5ms
+ * 24 ~=  16777216ns =  16.8ms
+ */
+#define NR_AVE_PERIOD_EXP	27
+#define NR_AVE_SCALE(x)		((x) << FSHIFT)
+#define NR_AVE_PERIOD		(1 << NR_AVE_PERIOD_EXP)
+#define NR_AVE_DIV_PERIOD(x)	((x) >> NR_AVE_PERIOD_EXP)
+
+static inline void do_avg_nr_running(struct rq *rq)
+{
+	s64 nr, deltax;
+
+	deltax = rq->clock_task - rq->nr_last_stamp;
+	rq->nr_last_stamp = rq->clock_task;
+	nr = NR_AVE_SCALE(rq->nr_running);
+
+	if (deltax > NR_AVE_PERIOD)
+		rq->ave_nr_running = nr;
+	else
+		rq->ave_nr_running +=
+			NR_AVE_DIV_PERIOD(deltax * (nr - rq->ave_nr_running));
+}
+>>>>>>> 1d7d559... scheduler: compute time-average nr_running per run-queue
 
 static inline void inc_nr_running(struct rq *rq)
 {
 
 #if defined(CONFIG_MSM_DCVS)
 	sched_update_nr_prod(cpu_of(rq), rq->nr_running, true);
+<<<<<<< HEAD
 #endif
 #ifdef CONFIG_INTELLI_PLUG
 	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
@@ -803,6 +835,9 @@ static inline void inc_nr_running(struct rq *rq)
 	nr_stats->ave_nr_running = do_avg_nr_running(rq);
 	nr_stats->nr_last_stamp = rq->clock_task;
 #endif
+=======
+	do_avg_nr_running(rq);
+>>>>>>> 1d7d559... scheduler: compute time-average nr_running per run-queue
 	rq->nr_running++;
 #ifdef CONFIG_INTELLI_PLUG
 	write_seqcount_end(&nr_stats->ave_seqcnt);
@@ -813,6 +848,7 @@ static inline void dec_nr_running(struct rq *rq)
 {
 #if defined(CONFIG_MSM_DCVS)
 	sched_update_nr_prod(cpu_of(rq), rq->nr_running, false);
+<<<<<<< HEAD
 #endif
 #ifdef CONFIG_INTELLI_PLUG
 	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
@@ -822,6 +858,9 @@ static inline void dec_nr_running(struct rq *rq)
 	nr_stats->ave_nr_running = do_avg_nr_running(rq);
 	nr_stats->nr_last_stamp = rq->clock_task;
 #endif
+=======
+	do_avg_nr_running(rq);
+>>>>>>> 1d7d559... scheduler: compute time-average nr_running per run-queue
 	rq->nr_running--;
 #ifdef CONFIG_INTELLI_PLUG
 	write_seqcount_end(&nr_stats->ave_seqcnt);
