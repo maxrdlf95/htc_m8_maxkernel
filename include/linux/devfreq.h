@@ -30,6 +30,7 @@ struct devfreq_dev_status {
 };
 
 #define DEVFREQ_FLAG_LEAST_UPPER_BOUND		0x1
+#define DEVFREQ_FLAG_WAKEUP_MAXFREQ		0x2
 
 #define DEVFREQ_FLAG_FAST_HINT	0x2
 #define DEVFREQ_FLAG_SLOW_HINT	0x4
