@@ -48,7 +48,9 @@ obj-$(CONFIG_FB_MSM_QPIC) += mdss-qpic.o
 obj-$(CONFIG_FB_MSM_QPIC_ILI_QVGA_PANEL) += qpic_panel_ili_qvga.o
 
 obj-$(CONFIG_FB_MSM_MDSS) += mdss_fb.o
+ifeq ($(CONFIG_LCD_NOTIFY),y)
 obj-$(CONFIG_FB_MSM_MDSS) += lcd_notify.o
+endif
 
 obj-$(CONFIG_FB_MSM_MDSS_HDMI_MHL_SII9234) += sii9234/
 obj-$(CONFIG_FB_MSM_MDSS_HDMI_MHL_SII8240_SII8558) += sii8240_8558/
