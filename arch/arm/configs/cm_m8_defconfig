@@ -539,7 +539,13 @@ CONFIG_MACH_M8=y
 # CONFIG_MACH_M8_WHL is not set
 # CONFIG_MACH_M8_WL is not set
 CONFIG_MACH_NAME=""
+<<<<<<< HEAD:arch/arm/configs/cm_m8_defconfig
 # CONFIG_PERFLOCK is not set
+=======
+CONFIG_PERFLOCK=y
+CONFIG_MSM_CPU_VOLTAGE_CONTROL=y
+CONFIG_FORCE_FAST_CHARGE=y
+>>>>>>> 2b4b27c... OC/UV interface:arch/arm/configs/liquid_m8_defconfig
 
 #
 # System MMU
