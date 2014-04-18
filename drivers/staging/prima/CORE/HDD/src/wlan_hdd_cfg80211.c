@@ -571,7 +571,7 @@ int wlan_hdd_send_avoid_freq_event(hdd_context_t *pHddCtx,
         return -1;
     }
 
-    vendor_event = cfg80211_vendor_event_alloc(pHddCtx->wiphy,
+    vendor_event = (struct sk_buff *)cfg80211_vendor_event_alloc(pHddCtx->wiphy,
                        sizeof(tHddAvoidFreqList),
                        QCOM_NL80211_VENDOR_SUBCMD_AVOID_FREQUENCY_INDEX,
                        GFP_KERNEL);
