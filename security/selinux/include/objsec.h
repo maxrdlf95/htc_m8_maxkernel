@@ -45,7 +45,8 @@ struct inode_security_struct {
 	u32 task_sid;		
 	u32 sid;		
 	u16 sclass;		
-	unsigned char initialized;	
+	unsigned char initialized;
+	u32 tag;
 	struct mutex lock;
 };
 
