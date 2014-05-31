@@ -381,7 +381,6 @@ KBUILD_CFLAGS   := -w -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-maybe-uninitialized \
 		   -Wno-sizeof-pointer-memaccess \
  		   -fno-delete-null-pointer-checks \
-		   -Wno-sequence-point \
 		   -march=armv7-a -marm -mfpu=neon-vfpv4
 
 KBUILD_AFLAGS_KERNEL :=
