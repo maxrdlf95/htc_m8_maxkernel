@@ -278,13 +278,8 @@ struct rq {
 	/* time-based average load */
 	u64 nr_last_stamp;
 	unsigned int ave_nr_running;
-<<<<<<< HEAD
-	seqcount_t ave_seqcnt;
-
-=======
 
 	/* capture load from *all* tasks on this cpu: */
->>>>>>> 1d7d559... scheduler: compute time-average nr_running per run-queue
 	struct load_weight load;
 	unsigned long nr_load_updates;
 	u64 nr_switches;
