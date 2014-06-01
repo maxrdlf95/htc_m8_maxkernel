@@ -480,5 +480,3 @@ obj-$(CONFIG_HTC_RPM_CMD) += rpm_htc_cmd.o
 obj-$(CONFIG_HTC_MONITOR) += htc_monitor.o
 obj-$(CONFIG_LCD_KCAL) += htc_kcal_ctrl.o
 obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
-obj-$(CONFIG_MSM_CPUFREQ_LIMITER) += cpufreq_limit.o
-
