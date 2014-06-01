@@ -33,13 +33,21 @@ else
     WLAN_BLD_DIR := vendor/qcom/opensource/wlan
 endif
 
-ifeq ($(call is-android-codename,JELLY_BEAN),true)
+# DLKM_DIR was moved for JELLY_BEAN (PLATFORM_SDK 16)
+ifeq ($(call is-platform-sdk-version-at-least,16),true)
        DLKM_DIR := $(TOP)/device/qcom/common/dlkm
 else
        DLKM_DIR := build/dlkm
 endif
 
-ifeq ($(WLAN_PROPRIETARY),1)
+# Copy WCNSS_cfg.dat file from firmware_bin/ folder to target out directory.
+ifeq ($(WLAN_PROPRIETARY),0)
+
+$(shell rm -f $(TARGET_OUT_ETC)/firmware/wlan/prima/WCNSS_cfg.dat)
+$(shell cp $(LOCAL_PATH)/firmware_bin/WCNSS_cfg.dat $(TARGET_OUT_ETC)/firmware/wlan/prima)
+
+else
+
 # For the proprietary driver the firmware files are handled here
 include $(CLEAR_VARS)
 LOCAL_MODULE       := WCNSS_qcom_wlan_nv.bin

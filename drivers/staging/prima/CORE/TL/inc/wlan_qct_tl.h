@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -51,17 +51,6 @@
 DESCRIPTION
   This file contains the external API exposed by the wlan transport layer
   module.
-<<<<<<< HEAD:CORE/TL/inc/wlan_qct_tl.h
-  
-      
-  Copyright (c) 2008 QUALCOMM Incorporated. All Rights Reserved.
-  Qualcomm Confidential and Proprietary
-=======
-
-
-  Copyright (c) 2008 Qualcomm Technologies, Inc. All Rights Reserved.
-  Qualcomm Technologies Confidential and Proprietary
->>>>>>> 326d6cf... wlan: remove obsolete ANI_CHIPSET_VOLANS featurization:prima/CORE/TL/inc/wlan_qct_tl.h
 ===========================================================================*/
 
 
@@ -293,9 +282,9 @@ typedef struct
  /*Flag to indicate if STA is a WAPI STA*/
   v_U8_t         ucIsWapiSta;
 
-#ifdef FEATURE_WLAN_CCX
- /*Flag to indicate if STA is a CCX STA*/
-  v_U8_t         ucIsCcxSta;
+#ifdef FEATURE_WLAN_ESE
+ /*Flag to indicate if STA is a ESE STA*/
+  v_U8_t         ucIsEseSta;
 #endif
 
   /*DPU Signature used for broadcast data - used for data caching*/
@@ -322,6 +311,9 @@ typedef struct
 
   /* Min Threshold for Processing Frames in TL */
   v_U8_t   uMinFramesProcThres;
+
+  /* Re-order Aging Time */
+  v_U16_t  ucReorderAgingTime[WLANTL_MAX_AC];
 }WLANTL_ConfigInfoType;
 
 /*---------------------------------------------------------------------------
@@ -427,6 +419,8 @@ typedef struct
 
   /* STA has more packets to send */
   v_BOOL_t  bMorePackets;
+  /* notifying TL if this is an ARP frame or not */
+  v_U8_t    ucIsArp;
 }WLANTL_MetaInfoType;
 
 /*---------------------------------------------------------------------------
@@ -1701,7 +1695,7 @@ WLANTL_TxMgmtFrm
   v_U8_t               tid,
   WLANTL_TxCompCBType  pfnCompTxFunc,
   v_PVOID_t            voosBDHeader,
-  v_U8_t               ucAckResponse
+  v_U32_t              ucAckResponse
 );
 
 
@@ -1951,6 +1945,44 @@ WLANTL_GetRxPktCount
 ============================================================================*/
 VOS_STATUS
 WLANTL_McProcessMsg
+(
+  v_PVOID_t        pvosGCtx,
+  vos_msg_t*       message
+);
+
+/*==========================================================================
+  FUNCTION    WLANTL_RxProcessMsg
+
+  DESCRIPTION
+    Called by VOSS when a message was serialized for TL through the
+    rx thread/task.
+
+  DEPENDENCIES
+    The TL must be initialized before this function can be called.
+
+  PARAMETERS
+
+    IN
+    pvosGCtx:       pointer to the global vos context; a handle to TL's
+                    control block can be extracted from its context
+    message:        type and content of the message
+
+
+  RETURN VALUE
+    The result code associated with performing the operation
+
+    VOS_STATUS_E_INVAL:   invalid input parameters
+    VOS_STATUS_E_FAULT:   pointer to TL cb is NULL ; access would cause a
+                          page fault
+    VOS_STATUS_SUCCESS:   Everything is good :)
+
+  Other values can be returned as a result of a function call, please check
+  corresponding API for more info.
+  SIDE EFFECTS
+
+============================================================================*/
+VOS_STATUS
+WLANTL_RxProcessMsg
 (
   v_PVOID_t        pvosGCtx,
   vos_msg_t*       message

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -873,13 +873,11 @@ typedef struct
     tANI_U16 paramChangeBitmap;
 }tUpdateBeaconParams, *tpUpdateBeaconParams;
 
-#ifdef WLAN_FEATURE_11AC
 typedef struct 
 {
    tANI_U16   opMode;
    tANI_U16  staId;
 }tUpdateVHTOpMode, *tpUpdateVHTOpMode;
-#endif
 
 //HAL MSG: SIR_HAL_UPDATE_CF_IND
 typedef struct
@@ -1270,7 +1268,7 @@ typedef struct sEnterBmpsParams
     //if association is based on ProbeRsp instead of beacon.
     tANI_U8 dtimPeriod;
 
-    // For CCX and 11R Roaming
+    // For ESE and 11R Roaming
     tANI_U8  bRssiFilterEnable;
     tANI_U32 rssiFilterPeriod;
     tANI_U32 numBeaconPerRssiAverage;
@@ -1302,6 +1300,12 @@ typedef struct sMaxTxPowerParams
     tPowerdBm  power;
 }tMaxTxPowerParams, *tpMaxTxPowerParams;
 
+typedef struct sMaxTxPowerPerBandParams
+{
+    eCsrBand   bandInfo;
+    tPowerdBm  power;
+}tMaxTxPowerPerBandParams, *tpMaxTxPowerPerBandParams;
+
 typedef struct sAddStaSelfParams
 {
    tSirMacAddr selfMacAddr;
@@ -1327,6 +1331,9 @@ typedef struct sP2pPsParams
    tANI_U8   psSelection;
 }tP2pPsParams, *tpP2pPsParams;
 
+#define HAL_MAX_SUPP_CHANNELS 128
+#define HAL_MAX_SUPP_OPER_CLASSES 32
+
 typedef struct sTdlsLinkEstablishParams
 {
    tANI_U16  staIdx;
@@ -1334,6 +1341,13 @@ typedef struct sTdlsLinkEstablishParams
    tANI_U8   uapsdQueues;
    tANI_U8   maxSp;
    tANI_U8   isBufsta;
+   tANI_U8   isOffChannelSupported;
+   tANI_U8   peerCurrOperClass;
+   tANI_U8   selfCurrOperClass;
+   tANI_U8   validChannelsLen;
+   tANI_U8   validChannels[HAL_MAX_SUPP_CHANNELS];
+   tANI_U8   validOperClassesLen;
+   tANI_U8   validOperClasses[HAL_MAX_SUPP_OPER_CLASSES];
    tANI_U32  status;
 }tTdlsLinkEstablishParams, *tpTdlsLinkEstablishParams;
 
