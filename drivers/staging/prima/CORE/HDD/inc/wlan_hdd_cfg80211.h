@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,25 +18,11 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 #if !defined( HDD_CFG80211_H__ )
@@ -168,6 +154,17 @@ int wlan_hdd_cfg80211_pmksa_candidate_notify(
                     int index, bool preauth );
 #endif
 
+#ifdef FEATURE_WLAN_LFR_METRICS
+VOS_STATUS wlan_hdd_cfg80211_roam_metrics_preauth(hdd_adapter_t *pAdapter,
+                                                  tCsrRoamInfo *pRoamInfo);
+
+VOS_STATUS wlan_hdd_cfg80211_roam_metrics_preauth_status(
+    hdd_adapter_t *pAdapter, tCsrRoamInfo *pRoamInfo, bool preauth_status);
+
+VOS_STATUS wlan_hdd_cfg80211_roam_metrics_handover(hdd_adapter_t *pAdapter,
+                                                   tCsrRoamInfo *pRoamInfo);
+#endif
+
 #ifdef FEATURE_WLAN_WAPI
 void wlan_hdd_cfg80211_set_key_wapi(hdd_adapter_t* pAdapter,
               u8 key_index, const u8 *mac_addr, u8 *key , int key_Len);
@@ -186,10 +183,9 @@ int wlan_hdd_cfg80211_init(struct device *dev,
                                          );
 
 int wlan_hdd_cfg80211_register( struct wiphy *wiphy);
-void wlan_hdd_cfg80211_post_voss_start(hdd_adapter_t* pAdapter);
+void wlan_hdd_cfg80211_register_frames(hdd_adapter_t* pAdapter);
 
-void wlan_hdd_cfg80211_pre_voss_stop(hdd_adapter_t* pAdapter);
-
+void wlan_hdd_cfg80211_deregister_frames(hdd_adapter_t* pAdapter);
 #ifdef CONFIG_ENABLE_LINUX_REG
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,9,0))
 void wlan_hdd_linux_reg_notifier(struct wiphy *wiphy, struct regulatory_request *request);

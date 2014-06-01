@@ -1,25 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-/*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -40,7 +20,14 @@
  */
 
 /*
- * Airgo Networks, Inc proprietary. All rights reserved.
+ * Copyright (c) 2012-2013 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
+ *
+ */
+
+
+/*
  * This file limProcessSmeReqMessages.cc contains the code
  * for processing SME request messages.
  * Author:        Chandra Modumudi
@@ -646,7 +633,6 @@ __limHandleSmeStartBssRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
         psessionEntry->txLdpcIniFeatureEnabled = 
                                     pSmeStartBssReq->txLdpcIniFeatureEnabled;
 
-
 #ifdef WLAN_FEATURE_11W
         psessionEntry->limRmfEnabled = pSmeStartBssReq->pmfCapable ? 1 : 0;
         limLog(pMac, LOG1, FL("Session RMF enabled: %d"), psessionEntry->limRmfEnabled);
@@ -690,13 +676,25 @@ __limHandleSmeStartBssRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                  }
                  psessionEntry->ssidHidden = pSmeStartBssReq->ssidHidden;
                  psessionEntry->wps_state = pSmeStartBssReq->wps_state;
-                 psessionEntry->shortSlotTimeSupported = limGetShortSlotFromPhyMode(pMac, psessionEntry, psessionEntry->gLimPhyMode);
+                 limGetShortSlotFromPhyMode(pMac, psessionEntry,
+                                            psessionEntry->gLimPhyMode,
+                                            &psessionEntry->shortSlotTimeSupported);
                  break;
             case eSIR_IBSS_MODE:
                  psessionEntry->limSystemRole = eLIM_STA_IN_IBSS_ROLE;
-                 psessionEntry->shortSlotTimeSupported =
-                        limGetShortSlotFromPhyMode(pMac, psessionEntry,
-                                                   psessionEntry->gLimPhyMode);
+                 limGetShortSlotFromPhyMode(pMac, psessionEntry,
+                                            psessionEntry->gLimPhyMode,
+                                            &psessionEntry->shortSlotTimeSupported);
+                 /* In WPA-NONE case we wont get the privacy bit in ibss config
+                  * from supplicant, but we are updating WNI_CFG_PRIVACY_ENABLED
+                  * on basis of Encryption type in csrRoamSetBssConfigCfg. So
+                  * get the privacy info from WNI_CFG_PRIVACY_ENABLED
+                  */
+                 if (wlan_cfgGetInt(pMac, WNI_CFG_PRIVACY_ENABLED, &val)
+                                                               != eSIR_SUCCESS)
+                      limLog(pMac, LOGE, FL("cfg get WNI_CFG_PRIVACY_ENABLED"
+                            " failed"));
+                 psessionEntry->privacy =(tANI_U8) val;
                  psessionEntry->isCoalesingInIBSSAllowed =
                                 pSmeStartBssReq->isCoalesingInIBSSAllowed;
                  break;
@@ -759,7 +757,7 @@ __limHandleSmeStartBssRequest(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
                       FL("Unable to retrieve Channel Width from CFG"));
                 }
 
-                if( channelNumber <= RF_CHAN_14 &&
+                if(channelNumber <= RF_CHAN_14 &&
                                 chanWidth != eHT_CHANNEL_WIDTH_20MHZ)
                 {
                      chanWidth = eHT_CHANNEL_WIDTH_20MHZ;
@@ -1132,7 +1130,7 @@ static eHalStatus limSendHalStartScanOffloadReq(tpAniSirGlobal pMac,
     {
         limLog(pMac, LOGE,
                 FL("Invalid value (%d) for numSsid"), SIR_SCAN_MAX_NUM_SSID);
-        palFreeMemory(pMac->hHdd, (void *)pScanOffloadReq);
+        vos_mem_free (pScanOffloadReq);
         return eHAL_STATUS_FAILURE;
     }
 
@@ -1171,8 +1169,7 @@ static eHalStatus limSendHalStartScanOffloadReq(tpAniSirGlobal pMac,
     rc = wdaPostCtrlMsg(pMac, &msg);
     if (rc != eSIR_SUCCESS)
     {
-        limLog(pMac, LOGE, FL("wdaPostCtrlMsg() return failure"),
-               pMac);
+        limLog(pMac, LOGE, FL("wdaPostCtrlMsg() return failure"));
         vos_mem_free(pScanOffloadReq);
         return eHAL_STATUS_FAILURE;
     }
@@ -3220,6 +3217,8 @@ void limProcessSmeGetScanChannelInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
     tSirMsgQ         mmhMsg;
     tpSmeGetScanChnRsp  pSirSmeRsp;
     tANI_U16 len = 0;
+    tANI_U8 sessionId;
+    tANI_U16 transactionId;
 
     if(pMac->lim.scanChnInfo.numChnInfo > SIR_MAX_SUPPORTED_CHANNEL_LIST)
     {
@@ -3246,7 +3245,14 @@ void limProcessSmeGetScanChannelInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
 
     pSirSmeRsp->mesgType = eWNI_SME_GET_SCANNED_CHANNEL_RSP;
     pSirSmeRsp->mesgLen = len;
-    pSirSmeRsp->sessionId = 0;
+
+    if (pMac->fScanOffload)
+    {
+        limGetSessionInfo(pMac,(tANI_U8 *)pMsgBuf,&sessionId,&transactionId);
+        pSirSmeRsp->sessionId = sessionId;
+    }
+    else
+        pSirSmeRsp->sessionId = 0;
 
     if(pMac->lim.scanChnInfo.numChnInfo)
     {
@@ -3338,7 +3344,7 @@ void limProcessSmeGetAssocSTAsInfo(tpAniSirGlobal pMac, tANI_U32 *pMsgBuf)
             pAssocStasTemp->assocId = (v_U8_t)pStaDs->assocId;         // Association Id
             pAssocStasTemp->staId   = (v_U8_t)pStaDs->staIndex;        // Station Id
 
-            palCopyMemory(pMac->hHdd, (tANI_U8 *)&pAssocStasTemp->supportedRates,
+            vos_mem_copy((tANI_U8 *)&pAssocStasTemp->supportedRates,
                                       (tANI_U8 *)&pStaDs->supportedRates,
                                       sizeof(tSirSupportedRates));
             pAssocStasTemp->ShortGI40Mhz = pStaDs->htShortGI40Mhz;
@@ -3667,9 +3673,9 @@ void limProcessSmeDelBssRsp(
     (void) body;
     SET_LIM_PROCESS_DEFD_MESGS(pMac, true);
     //TBD: get the sessionEntry
+    limIbssDelete(pMac,psessionEntry);
     dphHashTableClassInit(pMac, &psessionEntry->dph.dphHashTable);
     limDeletePreAuthList(pMac);
-    limIbssDelete(pMac,psessionEntry);
     limSendSmeRsp(pMac, eWNI_SME_STOP_BSS_RSP, eSIR_SME_SUCCESS,psessionEntry->smeSessionId,psessionEntry->transactionId);
     return;
 }

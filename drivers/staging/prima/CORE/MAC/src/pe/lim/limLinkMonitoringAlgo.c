@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,28 +18,12 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
-
-
 
 /*
  * This file limLinkMonitoringAlgo.cc contains the code for
@@ -383,6 +367,27 @@ limTearDownLinkWithAp(tpAniSirGlobal pMac, tANI_U8 sessionId, tSirMacReasonCodes
         vos_mem_copy((tANI_U8 *) &mlmDeauthInd.peerMacAddr,
                       pStaDs->staAddr,
                       sizeof(tSirMacAddr));
+        /* if sendDeauthBeforeCon is enabled and reasoncode is Beacon Missed
+         * Store the MAC of AP in the flip flop buffer. This MAC will be
+         * used to send Deauth before connection, if we connect to same AP
+         * after HB failure.
+         */
+        if(pMac->roam.configParam.sendDeauthBeforeCon &&
+            eSIR_BEACON_MISSED == reasonCode)
+        {
+           int apCount = pMac->lim.gLimHeartBeatApMacIndex;
+
+           if(pMac->lim.gLimHeartBeatApMacIndex)
+              pMac->lim.gLimHeartBeatApMacIndex = 0;
+           else
+              pMac->lim.gLimHeartBeatApMacIndex = 1;
+
+           limLog(pMac, LOGE, FL("HB Failure on MAC "
+                 MAC_ADDRESS_STR" Store it on Index %d"),
+                   MAC_ADDR_ARRAY(pStaDs->staAddr),apCount);
+
+           sirCopyMacAddr(pMac->lim.gLimHeartBeatApMac[apCount],pStaDs->staAddr);
+        }
         mlmDeauthInd.reasonCode    = (tANI_U8) pStaDs->mlmStaContext.disassocReason;
         mlmDeauthInd.deauthTrigger =  pStaDs->mlmStaContext.cleanupTrigger;
 
@@ -458,6 +463,8 @@ void limHandleHeartBeatFailure(tpAniSirGlobal pMac,tpPESession psessionEntry)
         {
             /*** Detected continuous Beacon Misses ***/
              psessionEntry->LimHBFailureStatus= eANI_BOOLEAN_TRUE;
+             /*Reset the HB packet count before sending probe*/
+             limResetHBPktCount(psessionEntry);
             /**
              * Send Probe Request frame to AP to see if
              * it is still around. Wait until certain
@@ -479,7 +486,7 @@ void limHandleHeartBeatFailure(tpAniSirGlobal pMac,tpPESession psessionEntry)
             }
             /* Connected on DFS channel so should not send the probe request
             * tear down the link directly */
-            limTearDownLinkWithAp(pMac, psessionEntry->peSessionId, eSIR_MAC_UNSPEC_FAILURE_REASON);
+            limTearDownLinkWithAp(pMac, psessionEntry->peSessionId, eSIR_BEACON_MISSED);
         }
     }
     else

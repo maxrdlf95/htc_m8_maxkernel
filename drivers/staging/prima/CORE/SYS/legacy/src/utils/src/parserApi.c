@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,28 +18,14 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
+
 /*
- * Airgo Networks, Inc proprietary. All rights reserved.
  * This file parserApi.cc contains the code for parsing
  * 802.11 messages.
  * Author:        Pierre Vandwalle
@@ -4292,12 +4278,12 @@ PopulateDot11fTCLAS(tpAniSirGlobal  pMac,
         pDot11f->info.IpParams.version = pOld->version;
         if ( SIR_MAC_TCLAS_IPV4 == pDot11f->info.IpParams.version )
         {
-            vos_mem_copy( ( tANI_U8* )&pDot11f->info.IpParams.params.
+            vos_mem_copy( pDot11f->info.IpParams.params.
                           IpV4Params.source,
-                          ( tANI_U8* )pOld->tclasParams.ipv4.srcIpAddr, 4 );
-            vos_mem_copy( ( tANI_U8* )&pDot11f->info.IpParams.params.
+                          pOld->tclasParams.ipv4.srcIpAddr, 4 );
+            vos_mem_copy( pDot11f->info.IpParams.params.
                           IpV4Params.dest,
-                          ( tANI_U8* )pOld->tclasParams.ipv4.dstIpAddr, 4 );
+                          pOld->tclasParams.ipv4.dstIpAddr, 4 );
             pDot11f->info.IpParams.params.IpV4Params.src_port  =
               pOld->tclasParams.ipv4.srcPort;
             pDot11f->info.IpParams.params.IpV4Params.dest_port =

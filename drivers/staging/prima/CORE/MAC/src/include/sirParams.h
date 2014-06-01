@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,25 +18,25 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
  *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+ */
+
+
+/*
+ * This file sirParams.h contains the common parameter definitions, which
+ * are not dependent on threadX API. These can be used by all Firmware
+ * modules.
  *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * Author:      Sandesh Goel
+ * Date:        04/13/2002
+ * History:-
+ * Date            Modified by    Modification Information
+ * --------------------------------------------------------------------
  */
 
 #ifndef __SIRPARAMS_H
@@ -95,12 +95,17 @@ typedef enum {
 #ifdef FEATURE_WLAN_BATCH_SCAN
    BATCH_SCAN = 30,
 #endif
-   FW_IN_TX_PATH          = 31,
+   FW_IN_TX_PATH = 31,
    EXTENDED_NSOFFLOAD_SLOT = 32,
    CH_SWITCH_V1           = 33,
    HT40_OBSS_SCAN         = 34,
    UPDATE_CHANNEL_LIST    = 35,
-   WLAN_MCADDR_FLT        = 36
+   WLAN_MCADDR_FLT        = 36,
+   WLAN_CH144             = 37,
+#ifdef FEATURE_WLAN_TDLS
+   TDLS_SCAN_COEXISTENCE  = 39,
+#endif
+
    //MAX_FEATURE_SUPPORTED = 128
 } placeHolderInCapBitmap;
 
@@ -587,9 +592,6 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_TDLS_IND (SIR_HAL_ITC_MSG_TYPES_BEGIN + 199)
 #endif
 
-#define SIR_HAL_START_SCAN_OFFLOAD_REQ     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 197)
-#define SIR_HAL_START_SCAN_OFFLOAD_RSP     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 198)
-#define SIR_HAL_UPDATE_CHAN_LIST_REQ       (SIR_HAL_ITC_MSG_TYPES_BEGIN + 199)
 #define SIR_HAL_UPDATE_CHAN_LIST_RSP       (SIR_HAL_ITC_MSG_TYPES_BEGIN + 200)
 #define SIR_HAL_STOP_SCAN_OFFLOAD_REQ      (SIR_HAL_ITC_MSG_TYPES_BEGIN + 201)
 #define SIR_HAL_STOP_SCAN_OFFLOAD_RSP      (SIR_HAL_ITC_MSG_TYPES_BEGIN + 202)
@@ -610,16 +612,17 @@ typedef struct sSirMbMsgP2p
 #define SIR_HAL_STOP_BATCH_SCAN_IND        (SIR_HAL_ITC_MSG_TYPES_BEGIN + 212)
 #define SIR_HAL_TRIGGER_BATCH_SCAN_RESULT_IND (SIR_HAL_ITC_MSG_TYPES_BEGIN + 213)
 #endif
+
 #define SIR_HAL_RATE_UPDATE_IND            (SIR_HAL_ITC_MSG_TYPES_BEGIN + 217)
+#define SIR_HAL_START_SCAN_OFFLOAD_REQ     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 218)
+#define SIR_HAL_START_SCAN_OFFLOAD_RSP     (SIR_HAL_ITC_MSG_TYPES_BEGIN + 219)
+#define SIR_HAL_UPDATE_CHAN_LIST_REQ       (SIR_HAL_ITC_MSG_TYPES_BEGIN + 220)
 
 #define SIR_HAL_SET_MAX_TX_POWER_PER_BAND_REQ \
-        (SIR_HAL_ITC_MSG_TYPES_BEGIN + 214)
+        (SIR_HAL_ITC_MSG_TYPES_BEGIN + 221)
 #define SIR_HAL_SET_MAX_TX_POWER_PER_BAND_RSP \
-        (SIR_HAL_ITC_MSG_TYPES_BEGIN + 215)
+        (SIR_HAL_ITC_MSG_TYPES_BEGIN + 222)
 
-#ifdef FEATURE_CESIUM_PROPRIETARY
-#define SIR_HAL_TX_FAIL_MONITOR_IND         (SIR_HAL_ITC_MSG_TYPES_BEGIN + 226)
-#endif /* FEATURE_CESIUM_PROPRIETARY */
 
 /* OBSS Scan start Indication to FW*/
 #define SIR_HAL_HT40_OBSS_SCAN_IND      (SIR_HAL_ITC_MSG_TYPES_BEGIN +227)

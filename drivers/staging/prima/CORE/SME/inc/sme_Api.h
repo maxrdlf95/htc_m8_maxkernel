@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,26 +18,14 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
  *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
  */
+
 
 #if !defined( __SME_API_H )
 #define __SME_API_H
@@ -1893,7 +1881,6 @@ eHalStatus sme_SetHostOffload (tHalHandle hHal, tANI_U8 sessionId,
 eHalStatus sme_SetKeepAlive (tHalHandle hHal, tANI_U8 sessionId,
                                   tpSirKeepAliveReq pRequest);
 
-
 /* ----------------------------------------------------------------------------
    \fn sme_GetOperationChannel
    \brief API to get current channel on which STA is parked
@@ -2074,11 +2061,13 @@ tANI_U8 sme_GetConcurrentOperationChannel( tHalHandle hHal );
     \fn sme_AbortMacScan
     \brief  API to cancel MAC scan.
     \param  hHal - The handle returned by macOpen.
+    \param  sessionId - sessionId for interface
     \return VOS_STATUS
             VOS_STATUS_E_FAILURE - failure
             VOS_STATUS_SUCCESS  success
   ---------------------------------------------------------------------------*/
-eHalStatus sme_AbortMacScan(tHalHandle hHal, eCsrAbortReason reason);
+eHalStatus sme_AbortMacScan(tHalHandle hHal, tANI_U8 sessionId,
+                            eCsrAbortReason reason);
 
 /* ---------------------------------------------------------------------------
     \fn sme_GetCfgValidChannels
@@ -3152,10 +3141,10 @@ eHalStatus sme_SendRateUpdateInd(tHalHandle hHal, tSirRateUpdateInd *rateUpdateP
 eHalStatus smeIssueFastRoamNeighborAPEvent (tHalHandle hHal,
                                             tANI_U8 *bssid,
                                             tSmeFastRoamTrigger fastRoamTrig);
+eHalStatus sme_RoamDelPMKIDfromCache( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *pBSSId );
 
 void smeGetCommandQStatus( tHalHandle hHal );
 
-eHalStatus sme_RoamDelPMKIDfromCache( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *pBSSId );
 #ifdef FEATURE_WLAN_BATCH_SCAN
 /* ---------------------------------------------------------------------------
     \fn sme_SetBatchScanReq
@@ -3209,8 +3198,6 @@ sme_StopBatchScanInd
 );
 
 #endif
-
-eHalStatus sme_RoamDelPMKIDfromCache( tHalHandle hHal, tANI_U8 sessionId, tANI_U8 *pBSSId );
 
 #ifdef FEATURE_WLAN_CH_AVOID
 /* ---------------------------------------------------------------------------

@@ -18,25 +18,11 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
  */
 
 /**========================================================================
@@ -98,6 +84,7 @@ tANI_U8* hdd_getActionString( tANI_U16 MsgType )
            return ("UNKNOWN");
     }
 }
+
 
 #ifdef WLAN_FEATURE_P2P_DEBUG
 #define MAX_P2P_ACTION_FRAME_TYPE 9
@@ -209,7 +196,7 @@ eHalStatus wlan_hdd_remain_on_channel_callback( tHalHandle hHal, void* pCtx,
     {
         if( cfgState->buf )
         {
-           hddLog( LOGE,
+           hddLog( LOGP,
                    "%s: We need to receive yet an ack from one of tx packet",
                    __func__);
         }
@@ -493,7 +480,7 @@ static int wlan_hdd_request_remain_on_channel( struct wiphy *wiphy,
 #endif
     pRemainChanCtx->duration = duration;
     pRemainChanCtx->dev = dev;
-    *cookie = (tANI_U32) pRemainChanCtx;
+    *cookie = (uintptr_t) pRemainChanCtx;
     pRemainChanCtx->cookie = *cookie;
     pRemainChanCtx->rem_on_chan_request = request_type;
     cfgState->remain_on_chan_ctx = pRemainChanCtx;
@@ -656,7 +643,7 @@ void hdd_remainChanReadyHandler( hdd_adapter_t *pAdapter )
 #else
                                pAdapter->dev,
 #endif
-                               (tANI_U32)pRemainChanCtx,
+                               (uintptr_t)pRemainChanCtx,
                                &pRemainChanCtx->chan,
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
                                pRemainChanCtx->chan_type,
@@ -1160,7 +1147,7 @@ int wlan_hdd_mgmt_tx( struct wiphy *wiphy, struct net_device *dev,
         else
         {
 #endif
-            *cookie = (tANI_U32) cfgState->buf;
+            *cookie = (uintptr_t) cfgState->buf;
             cfgState->action_cookie = *cookie;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
         }
@@ -1233,7 +1220,7 @@ err:
     }
     return 0;
 err_rem_channel:
-    *cookie = (tANI_U32)cfgState;
+    *cookie = (uintptr_t)cfgState;
     cfg80211_mgmt_tx_status(
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0))
                             pAdapter->dev->ieee80211_ptr,
@@ -1615,6 +1602,7 @@ int wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
 {
     hdd_context_t *pHddCtx = (hdd_context_t*) wiphy_priv(wiphy);
     hdd_adapter_t *pAdapter = NULL;
+    hdd_scaninfo_t *pScanInfo = NULL;
     ENTER();
 
     MTRACE(vos_trace(VOS_MODULE_ID_HDD,
@@ -1638,6 +1626,19 @@ int wlan_hdd_add_virtual_intf( struct wiphy *wiphy, char *name,
        return -EAGAIN;
 #endif
     }
+
+    pAdapter = hdd_get_adapter(pHddCtx, WLAN_HDD_INFRA_STATION);
+    pScanInfo =  &pHddCtx->scan_info;
+    if ((pScanInfo != NULL) && (pAdapter != NULL) &&
+        (pHddCtx->scan_info.mScanPending))
+    {
+        hdd_abort_mac_scan(pHddCtx, pAdapter->sessionId,
+                           eCSR_SCAN_ABORT_DEFAULT);
+        hddLog(VOS_TRACE_LEVEL_INFO,
+               "%s: Abort Scan while adding virtual interface",__func__);
+    }
+
+    pAdapter = NULL;
     if (pHddCtx->cfg_ini->isP2pDeviceAddrAdministrated &&
         ((NL80211_IFTYPE_P2P_GO == type) ||
          (NL80211_IFTYPE_P2P_CLIENT == type)))
@@ -2022,6 +2023,7 @@ void hdd_indicateMgmtFrame( hdd_adapter_t *pAdapter,
                      hddLog(LOGE,"Action frame received when Scanning is in"
                                  " progress. Abort Scan.");
                      hdd_abort_mac_scan(pAdapter->pHddCtx,
+                                        pAdapter->sessionId,
                                         eCSR_SCAN_ABORT_DEFAULT);
                  }
              }
@@ -2161,7 +2163,7 @@ static void hdd_wlan_tx_complete( hdd_adapter_t* pAdapter,
 
     if (data == NULL)
     {
-        hddLog( LOGE, FL("Not Able to Push %d byte to skb"), cfgState->len);
+        hddLog( LOGE, FL("Not Able to Push %zu byte to skb"), cfgState->len);
         kfree_skb( cfgState->skb );
         return;
     }

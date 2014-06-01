@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,26 +18,14 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
  *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
  */
+
 
 #ifndef WLAN_QCT_WDI_H
 #define WLAN_QCT_WDI_H
@@ -735,22 +723,6 @@ typedef struct
    wpt_macAddr staMacAddr;
 }WDI_IbssPeerInactivityIndType;
 
-#ifdef FEATURE_WLAN_CH_AVOID
-#define WDI_CH_AVOID_MAX_RANGE   4
-
-typedef struct
-{
-   wpt_uint32 startFreq;
-   wpt_uint32 endFreq;
-} WDI_ChAvoidFreqType;
-
-typedef struct
-{
-   wpt_uint32          avoidRangeCount;
-   WDI_ChAvoidFreqType avoidFreqRange[WDI_CH_AVOID_MAX_RANGE];
-} WDI_ChAvoidIndType;
-#endif /* FEATURE_WLAN_CH_AVOID */
-
 /*---------------------------------------------------------------------------
  WDI_TxRateFlags
 -----------------------------------------------------------------------------*/
@@ -824,6 +796,22 @@ typedef struct
     void   *pUserData;
 
 } WDI_RateUpdateIndParams;
+
+#ifdef FEATURE_WLAN_CH_AVOID
+#define WDI_CH_AVOID_MAX_RANGE   4
+
+typedef struct
+{
+   wpt_uint32 startFreq;
+   wpt_uint32 endFreq;
+} WDI_ChAvoidFreqType;
+
+typedef struct
+{
+   wpt_uint32          avoidRangeCount;
+   WDI_ChAvoidFreqType avoidFreqRange[WDI_CH_AVOID_MAX_RANGE];
+} WDI_ChAvoidIndType;
+#endif /* FEATURE_WLAN_CH_AVOID */
 
 /*---------------------------------------------------------------------------
   WDI_LowLevelIndType
@@ -1346,6 +1334,65 @@ typedef struct
   WDI_SwitchChReqInfoType  wdiChannelInfo; 
 
 }WDI_JoinReqInfoType;
+
+typedef enum
+{
+    eWDI_CHANNEL_SWITCH_SOURCE_SCAN,
+    eWDI_CHANNEL_SWITCH_SOURCE_LISTEN,
+    eWDI_CHANNEL_SWITCH_SOURCE_MCC,
+    eWDI_CHANNEL_SWITCH_SOURCE_CSA,
+    eWDI_CHANNEL_SWITCH_SOURCE_MAX = 0x7FFFFFFF
+} WDI_ChanSwitchSource;
+
+/*---------------------------------------------------------------------------
+  WDI_SwitchChReqInfoType_V1
+---------------------------------------------------------------------------*/
+typedef struct
+{
+  /*Indicates the channel to switch to.*/
+  wpt_uint8         ucChannel;
+
+  /*Local power constraint*/
+  wpt_uint8         ucLocalPowerConstraint;
+
+  /*Secondary channel offset */
+  WDI_HTSecondaryChannelOffset  wdiSecondaryChannelOffset;
+
+#ifdef WLAN_FEATURE_VOWIFI
+  wpt_int8      cMaxTxPower;
+  /*Self STA Mac address*/
+  wpt_macAddr   macSelfStaMacAddr;
+#endif
+  /* VO Wifi comment: BSSID is needed to identify which session
+     issued this request. As the request has power constraints, this
+     should be applied only to that session
+  */
+  /* V IMP: Keep bssId field at the end of this msg. It is used to
+     maintain backward compatibility by way of ignoring if using new
+     host/old FW or old host/new FW since it is at the end of this struct
+   */
+  wpt_macAddr   macBSSId;
+  /* Source of Channel Switch */
+  WDI_ChanSwitchSource channelSwitchSrc;
+}WDI_SwitchChReqInfoType_V1;
+
+/*--------------------------------------------------------------------
+  WDI_SwitchChReqParamsType_V1
+----------------------------------------------------------------------*/
+typedef struct
+{
+  /*Channel Info*/
+  WDI_SwitchChReqInfoType_V1  wdiChInfo;
+
+  /*Request status callback offered by UMAC - it is called if the current
+    req has returned PENDING as status; it delivers the status of sending
+    the message over the BUS */
+  WDI_ReqStatusCb   wdiReqStatusCB;
+
+  /*The user data passed in by UMAC, it will be sent back when the above
+    function pointer will be called */
+  void*             pUserData;
+}WDI_SwitchChReqParamsType_V1;
 
 /*---------------------------------------------------------------------------
   WDI_JoinReqParamsType
@@ -2765,6 +2812,26 @@ typedef struct
 #endif
 
 }WDI_SwitchCHRspParamsType;
+
+/*--------------------------------------------------------------------
+  WDI_SwitchChRspParamsType_V1
+--------------------------------------------------------------------*/
+typedef struct
+{
+   /*Status of the response*/
+  WDI_Status    wdiStatus;
+
+  /*Indicates the channel that WLAN is on*/
+  wpt_uint8     ucChannel;
+
+#ifdef WLAN_FEATURE_VOWIFI
+  /*HAL fills in the tx power used for mgmt frames in this field.*/
+  wpt_int8     ucTxMgmtPower;
+#endif
+
+  /* Source of Channel Switch */
+  WDI_ChanSwitchSource channelSwitchSrc;
+}WDI_SwitchChRspParamsType_V1;
 
 /*---------------------------------------------------------------------------
   WDI_ConfigSTAReqParamsType
@@ -6039,6 +6106,9 @@ typedef void  (*WDI_DelBARspCb)(WDI_Status   wdiStatus,
 typedef void  (*WDI_SwitchChRspCb)(WDI_SwitchCHRspParamsType*  pwdiSwitchChRsp,
                                    void*                       pUserData);
 
+typedef void  (*WDI_SwitchChRspCb_V1)(WDI_SwitchChRspParamsType_V1*  pwdiSwitchChRsp,
+                                      void* pUserData);
+
  
 /*---------------------------------------------------------------------------
    WDI_StartRspCb
@@ -7411,8 +7481,7 @@ typedef void (*WDI_GetBcnMissRateCb)(wpt_uint8 status, wpt_uint32 bcnMissRate,
  open both the data and the control transport which in their turn will open
  DXE/SMD or any other drivers that they need. 
  
- @param pOSContext: pointer to the OS context provided by the UMAC
-                    will be passed on to PAL on Open
+ @param devHandle: pointer to the OS specific device handle
         ppWDIGlobalCtx: output pointer of Global Context
         pWdiDevCapability: output pointer of device capability
 
@@ -7421,7 +7490,7 @@ typedef void (*WDI_GetBcnMissRateCb)(wpt_uint8 status, wpt_uint32 bcnMissRate,
 WDI_Status 
 WDI_Init
 ( 
-  void*                      pOSContext,
+  void*                      devHandle,
   void**                     ppWDIGlobalCtx,
   WDI_DeviceCapabilityType*  pWdiDevCapability,
   unsigned int               driverType
@@ -9311,9 +9380,34 @@ WDI_SwitchChReq
 );
 
 /**
+ @brief WDI_SwitchChReq_V1 is similar to WDI_SwitchChReq except
+        it also send type source for the channel change.
+        WDI_Start must have been called.
+
+ @param wdiSwitchChReqParams: the switch ch parameters as
+        specified by the Device Interface
+
+        wdiSwitchChRspCb: callback for passing back the response
+        of the switch ch operation received from the device
+
+        pUserData: user data will be passed back with the
+        callback
+
+ @see WDI_Start
+ @return Result of the function call
+*/
+
+WDI_Status
+WDI_SwitchChReq_V1
+(
+  WDI_SwitchChReqParamsType_V1* pwdiSwitchChReqParams,
+  WDI_SwitchChRspCb_V1          wdiSwitchChRspCb,
+  void*                      pUserData
+);
+
+/**
  @brief WDI_UpdateChannelReq will be called when the upper MAC
         wants to update the channel list on change in country code.
-
         In state BUSY this request will be queued. Request won't
         be allowed in any other state.
 

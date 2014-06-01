@@ -543,9 +543,12 @@ CONFIG_MACH_NAME=""
 # CONFIG_PERFLOCK is not set
 =======
 CONFIG_PERFLOCK=y
+<<<<<<< HEAD:arch/arm/configs/cm_m8_defconfig
 CONFIG_MSM_CPU_VOLTAGE_CONTROL=y
 CONFIG_FORCE_FAST_CHARGE=y
 >>>>>>> 2b4b27c... OC/UV interface:arch/arm/configs/liquid_m8_defconfig
+=======
+>>>>>>> parent of 2b4b27c... OC/UV interface:arch/arm/configs/liquid_m8_defconfig
 
 #
 # System MMU

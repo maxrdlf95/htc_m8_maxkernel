@@ -1,25 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-/*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -39,11 +19,20 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
+
 /**===========================================================================
   
   \file  wlan_hdd_tx_rx.c
   
   \brief Linux HDD Tx/RX APIs
+         Copyright 2008 (c) Qualcomm, Incorporated.
+         All Rights Reserved.
+         Qualcomm Confidential and Proprietary.
   
   ==========================================================================*/
   
@@ -243,6 +232,14 @@ void hdd_flush_ibss_tx_queues( hdd_adapter_t *pAdapter, v_U8_t STAId)
    struct netdev_queue *txq;
    struct sk_buff *skb = NULL;
 
+   if (NULL == pAdapter)
+   {
+       VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+              FL("pAdapter is NULL %u"), STAId);
+       VOS_ASSERT(0);
+       return;
+   }
+
    for (i = 0; i < NUM_TX_QUEUES; i++)
    {
       spin_lock_bh(&pAdapter->wmm_tx_queue[i].lock);
@@ -303,8 +300,10 @@ static struct sk_buff* hdd_mon_tx_fetch_pkt(hdd_adapter_t* pAdapter)
    VOS_STATUS status = VOS_STATUS_E_FAILURE;
    hdd_list_node_t *anchor = NULL;
 
-   if( NULL == pAdapter )
+   if (NULL == pAdapter)
    {
+      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+       FL("pAdapter is NULL"));
       VOS_ASSERT(0);
       return NULL;
    }
@@ -405,7 +404,7 @@ void hdd_mon_tx_mgmt_pkt(hdd_adapter_t* pAdapter)
    vos_mem_copy( cfgState->buf, skb->data, skb->len);
 
    cfgState->skb = skb; //buf;
-   cfgState->action_cookie = (tANI_U32)cfgState->buf;
+   cfgState->action_cookie = (uintptr_t)cfgState->buf;
 
    hdr = (struct ieee80211_hdr *)skb->data;
    if( (hdr->frame_control & HDD_FRAME_TYPE_MASK)
@@ -878,22 +877,29 @@ void hdd_tx_timeout(struct net_device *dev)
    struct netdev_queue *txq;
    int i = 0;
 
-   VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
-      "%s: Transmission timeout occurred", __func__);
+   if ( NULL == pAdapter )
+   {
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+              FL("pAdapter is NULL"));
+      VOS_ASSERT(0);
+      return;
+   }
 
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
+      "%s: Transmission timeout occurred", __func__);
    //Getting here implies we disabled the TX queues for too long. Queues are 
    //disabled either because of disassociation or low resource scenarios. In
    //case of disassociation it is ok to ignore this. But if associated, we have
    //do possible recovery here
 
-   VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
               "num_bytes AC0: %d AC1: %d AC2: %d AC3: %d",
               pAdapter->wmm_tx_queue[0].count,
               pAdapter->wmm_tx_queue[1].count,
               pAdapter->wmm_tx_queue[2].count,
               pAdapter->wmm_tx_queue[3].count);
 
-   VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
               "tx_suspend AC0: %d AC1: %d AC2: %d AC3: %d",
               pAdapter->isTxSuspended[0],
               pAdapter->isTxSuspended[1],
@@ -903,11 +909,11 @@ void hdd_tx_timeout(struct net_device *dev)
    for (i = 0; i < 8; i++)
    {
       txq = netdev_get_tx_queue(dev, i);
-      VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+      VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
                 "Queue%d status: %d", i, netif_tx_queue_stopped(txq));
    }
 
-   VOS_TRACE( VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+   VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_INFO,
               "carrier state: %d", netif_carrier_ok(dev));
 } 
 
@@ -1910,7 +1916,11 @@ void hdd_tx_rx_pkt_cnt_stat_timer_handler( void *phddctx)
         pAdapterNode = pNext;
     }
 
-    if (pHddCtx->issplitscan_enabled)
+    /* If TDLSScanCoexistence is enabled, then the TDLS module shall take care
+     * of disabling the split scan and thus do not disable the same when the
+     * low TXRX condition is met.
+     */
+    if ((pHddCtx->isTdlsScanCoexistence == FALSE) && (pHddCtx->issplitscan_enabled))
     {
        VOS_TRACE( VOS_MODULE_ID_HDD_DATA, VOS_TRACE_LEVEL_ERROR,
                         "%s: Disable split scan", __func__);

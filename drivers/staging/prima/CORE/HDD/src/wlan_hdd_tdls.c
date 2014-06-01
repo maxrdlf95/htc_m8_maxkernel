@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -19,14 +19,18 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
+
 /**========================================================================
 
   \file  wlan_hdd_tdls.c
 
   \brief WLAN Host Device Driver implementation for TDLS
 
-  Copyright (c) 2013 Qualcomm Atheros, Inc. All Rights Reserved.
-  Qualcomm Atheros Confidential and Proprietary.
   ========================================================================*/
 
 #include <wlan_hdd_includes.h>
@@ -1038,7 +1042,7 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
     }
 
     VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,
-               "Discovery(%lu) Response from " MAC_ADDRESS_STR " link_status %d",
+               "Discovery(%u) Response from " MAC_ADDRESS_STR " link_status %d",
                pHddTdlsCtx->discovery_sent_cnt, MAC_ADDR_ARRAY(curr_peer->peerMac),
                curr_peer->link_status);
 
@@ -1057,7 +1061,7 @@ int wlan_hdd_tdls_recv_discovery_resp(hdd_adapter_t *pAdapter, u8 *mac)
         }
         else
         {
-            VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,
+            VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL, 
             "Rssi Threshold not met: "MAC_ADDRESS_STR" rssi = %d threshold = %d ",
             MAC_ADDR_ARRAY(curr_peer->peerMac), curr_peer->rssi,
             pHddTdlsCtx->threshold_config.rssi_trigger_threshold);
@@ -1257,21 +1261,21 @@ static int wlan_hdd_tdls_check_config(tdls_config_params_t *config)
     if (config->tx_period_t < CFG_TDLS_TX_STATS_PERIOD_MIN ||
         config->tx_period_t > CFG_TDLS_TX_STATS_PERIOD_MAX)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 2nd argument %d. <%d...%d>", __func__, config->tx_period_t,
+        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 2nd argument %d. <%d...%ld>", __func__, config->tx_period_t,
             CFG_TDLS_TX_STATS_PERIOD_MIN, CFG_TDLS_TX_STATS_PERIOD_MAX);
         return -1;
     }
     if (config->tx_packet_n < CFG_TDLS_TX_PACKET_THRESHOLD_MIN ||
         config->tx_packet_n > CFG_TDLS_TX_PACKET_THRESHOLD_MAX)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 3rd argument %d. <%d...%d>", __func__, config->tx_packet_n,
+        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 3rd argument %d. <%d...%ld>", __func__, config->tx_packet_n,
             CFG_TDLS_TX_PACKET_THRESHOLD_MIN, CFG_TDLS_TX_PACKET_THRESHOLD_MAX);
         return -1;
     }
     if (config->discovery_period_t < CFG_TDLS_DISCOVERY_PERIOD_MIN ||
         config->discovery_period_t > CFG_TDLS_DISCOVERY_PERIOD_MAX)
     {
-        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 4th argument %d. <%d...%d>", __func__, config->discovery_period_t,
+        hddLog(VOS_TRACE_LEVEL_ERROR, "%s invalid 4th argument %d. <%d...%ld>", __func__, config->discovery_period_t,
             CFG_TDLS_DISCOVERY_PERIOD_MIN, CFG_TDLS_DISCOVERY_PERIOD_MAX);
         return -1;
     }
@@ -1510,6 +1514,17 @@ int wlan_hdd_tdls_reset_peer(hdd_adapter_t *pAdapter, u8 *mac)
     curr_peer->link_status = eTDLS_LINK_IDLE;
     curr_peer->staId = 0;
 
+    /* Throughput Monitor shall disable the split scan when
+     * TDLS scan coexistance is disabled.At this point of time
+     * since TDLS scan coexistance is not meeting the criteria
+     * to be operational, explicitly make it false to enable
+     * throughput monitor takes the control of split scan.
+     */
+    if (pHddCtx->isTdlsScanCoexistence == TRUE)
+    {
+        pHddCtx->isTdlsScanCoexistence = FALSE;
+    }
+
     if(eTDLS_SUPPORT_ENABLED == pHddCtx->tdls_mode) {
         vos_timer_stop( &curr_peer->peerIdleTimer );
     }
@@ -1596,6 +1611,44 @@ tANI_U16 wlan_hdd_tdlsConnectedPeers(hdd_adapter_t *pAdapter)
     return pHddCtx->connected_peer_count;
 }
 
+hddTdlsPeer_t *wlan_hdd_tdls_get_first_connected_peer(hdd_adapter_t *pAdapter)
+{
+    int i;
+    struct list_head *head;
+    struct list_head *pos;
+    hddTdlsPeer_t *curr_peer = NULL;
+    tdlsCtx_t *pHddTdlsCtx;
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+
+    if(0 != (wlan_hdd_validate_context(pHddCtx)))
+    {
+       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
+                 FL("pHddCtx is not valid"));
+        return NULL;
+    }
+
+    mutex_lock(&pHddCtx->tdls_lock);
+    pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
+    if (NULL == pHddTdlsCtx) {
+        mutex_unlock(&pHddCtx->tdls_lock);
+        return NULL;
+    }
+    for (i = 0; i < 256; i++) {
+        head = &pHddTdlsCtx->peer_list[i];
+
+        list_for_each(pos, head) {
+            curr_peer= list_entry (pos, hddTdlsPeer_t, node);
+            if (curr_peer)
+            {
+               mutex_unlock(&pHddCtx->tdls_lock);
+               return curr_peer;
+            }
+        }
+    }
+    mutex_unlock(&pHddCtx->tdls_lock);
+    return NULL;
+}
+
 int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen)
 {
     int i;
@@ -1627,7 +1680,7 @@ int wlan_hdd_tdls_get_all_peers(hdd_adapter_t *pAdapter, char *buf, int buflen)
     pHddTdlsCtx = WLAN_HDD_GET_TDLS_CTX_PTR(pAdapter);
     if (NULL == pHddTdlsCtx) {
         mutex_unlock(&pHddCtx->tdls_lock);
-        len = snprintf(buf, buflen, "TDLS not enabled\n");
+        len = scnprintf(buf, buflen, "TDLS not enabled\n");
         return len;
     }
     for (i = 0; i < 256; i++) {
@@ -2071,7 +2124,7 @@ static void wlan_hdd_tdls_pre_setup(struct work_struct *work)
     wlan_hdd_tdls_check_power_save_prohibited(pHddTdlsCtx->pAdapter);
 
     mutex_unlock(&pHddCtx->tdls_lock);
-    VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL, "%s: discovery count %lu timeout %lu msec",
+    VOS_TRACE( VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL, "%s: discovery count %u timeout %u msec",
                __func__, pHddTdlsCtx->discovery_sent_cnt,
                pHddTdlsCtx->threshold_config.tx_period_t - TDLS_DISCOVERY_TIMEOUT_BEFORE_UPDATE);
 
@@ -2208,8 +2261,9 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
 {
     hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
     u16 connectedTdlsPeers;
-    hddTdlsPeer_t *curr_peer;
+    hddTdlsPeer_t *curr_peer, *connected_peer;
     unsigned long delay;
+    hdd_config_t  *cfg_param = pHddCtx->cfg_ini;
 
     if(0 != (wlan_hdd_validate_context(pHddCtx)))
     {
@@ -2221,7 +2275,6 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
     /* if tdls is not enabled, then continue scan */
     if (eTDLS_SUPPORT_NOT_ENABLED == pHddCtx->tdls_mode)
         return 1;
-
     curr_peer = wlan_hdd_tdls_is_progress(pHddCtx, NULL, 0);
     if (NULL != curr_peer)
     {
@@ -2275,6 +2328,66 @@ int wlan_hdd_tdls_scan_callback (hdd_adapter_t *pAdapter,
         wlan_hdd_tdls_set_mode(pHddCtx, eTDLS_SUPPORT_DISABLED, FALSE);
         /* indicate the teardown all connected to peer */
         connectedTdlsPeers = wlan_hdd_tdlsConnectedPeers(pAdapter);
+
+        /* check the TDLS link and Scan coexistance Capability */
+        if ( (TRUE == pHddCtx->cfg_ini->fEnableTDLSScanCoexSupport) &&
+             (TRUE == sme_IsFeatureSupportedByFW(TDLS_SCAN_COEXISTENCE)) &&
+             (connectedTdlsPeers == 1) )
+        {
+            /* get connected peer information */
+            connected_peer = wlan_hdd_tdls_get_first_connected_peer(pAdapter);
+            if (NULL == connected_peer) {
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_FATAL,
+                    "%s: Invalid connected_peer, Continue Scanning", __func__);
+                /* scan should continue */
+                return 1;
+            }
+            VOS_TRACE(VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,
+                      ("%s: TDLS Scan Co-exist supported connectedTdlsPeers =%d buffersta =%d"),
+                       __func__,connectedTdlsPeers,connected_peer->isBufSta);
+
+            if (connected_peer->isBufSta)
+            {
+                 pHddCtx->isTdlsScanCoexistence = TRUE;
+                 if ((cfg_param->dynSplitscan) && (!pHddCtx->issplitscan_enabled))
+                 {
+                           pHddCtx->issplitscan_enabled = TRUE;
+                           sme_enable_disable_split_scan(
+                                               WLAN_HDD_GET_HAL_CTX(pAdapter),
+                                               cfg_param->nNumStaChanCombinedConc,
+                                               cfg_param->nNumP2PChanCombinedConc);
+                 }
+                 VOS_TRACE(VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,
+                           ("%s:%d TDLS Scan Co-exist supported splitscan_enabled =%d "),
+                            __func__, __LINE__, pHddCtx->issplitscan_enabled);
+                 return 1;
+            }
+
+        }
+        else
+        {
+            /* Throughput Monitor shall disable the split scan when
+             * TDLS scan coexistance is disabled.At this point of time
+             * since TDLS scan coexistance is not meeting the criteria
+             * to be operational, explicitly make it false to enable
+             * throughput monitor takes the control of split scan.
+             */
+            pHddCtx->isTdlsScanCoexistence = FALSE;
+        }
+        VOS_TRACE(VOS_MODULE_ID_HDD, TDLS_LOG_LEVEL,
+                  ("%s: TDLS Scan Co-exist not supported connectedTdlsPeers =%d"
+                   " TDLSScanCoexSupport param =%d TDLS_SCAN_COEXISTENCE =%d"),
+                    __func__, connectedTdlsPeers,
+                    pHddCtx->cfg_ini->fEnableTDLSScanCoexSupport,
+                    sme_IsFeatureSupportedByFW(TDLS_SCAN_COEXISTENCE));
+
+        /* fall back to the implementation of teardown the peers on the scan
+         * when the number of connected peers are more than one. TDLS Scan
+         * coexistance feature is exercised only when a single peer is
+         * connected and the DUT shall not advertize the Buffer Sta capability,
+         * so that the peer shall not go to the TDLS power save
+         */
+
         if (connectedTdlsPeers)
         {
             tANI_U8 staIdx;
@@ -2330,6 +2443,7 @@ void wlan_hdd_tdls_scan_done_callback(hdd_adapter_t *pAdapter)
         return;
     }
 
+
     /* free allocated memory at scan time */
     wlan_hdd_tdls_free_scan_request (&pHddCtx->tdls_scan_ctxt);
 
@@ -2376,6 +2490,8 @@ void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
                                            hddTdlsPeer_t *curr_peer,
                                            tANI_U16 reason)
 {
+    hdd_context_t *pHddCtx = WLAN_HDD_GET_CTX(pAdapter);
+
     if (NULL == pAdapter || NULL == curr_peer)
     {
        VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
@@ -2385,6 +2501,17 @@ void wlan_hdd_tdls_indicate_teardown(hdd_adapter_t *pAdapter,
 
     if (eTDLS_LINK_CONNECTED != curr_peer->link_status)
         return;
+
+    /* Throughput Monitor shall disable the split scan when
+     * TDLS scan coexistance is disabled.At this point of time
+     * since TDLS scan coexistance is not meeting the criteria
+     * to be operational, explicitly make it false to enable
+     * throughput monitor takes the control of split scan.
+     */
+    if (pHddCtx->isTdlsScanCoexistence == TRUE)
+    {
+        pHddCtx->isTdlsScanCoexistence = FALSE;
+    }
 
     wlan_hdd_tdls_set_peer_link_status(curr_peer, eTDLS_LINK_TEARING);
     cfg80211_tdls_oper_request(pAdapter->dev,

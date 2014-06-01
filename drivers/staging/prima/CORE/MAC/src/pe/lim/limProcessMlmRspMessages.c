@@ -1,25 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
-/*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -39,6 +19,11 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
 
 /*
  * This file limProcessMlmRspMessages.cc contains the code
@@ -102,6 +87,10 @@ static void  limHandleDelBssInReAssocContext(tpAniSirGlobal pMac, tpDphHashNode 
 void limGetSessionInfo(tpAniSirGlobal pMac, tANI_U8 *, tANI_U8 *, tANI_U16 *);
 static void
 limProcessBtampAddBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ ,tpPESession psessionEntry);
+
+void limSwitchChannelResumeLinkRsp(tpAniSirGlobal pMac,
+                            eHalStatus status, tANI_U32* mlmAddBssRsp);
+
 /**
  * limProcessMlmRspMessages()
  *
@@ -2036,8 +2025,7 @@ void limProcessMlmDelBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ,tpPESession 
         if ( eSIR_SUCCESS != limSendExcludeUnencryptInd(pMac, TRUE, psessionEntry) )
         {
             limLog( pMac, LOGE,
-                    FL( "Could not send down Exclude Unencrypted Indication!" ),
-                    psessionEntry->limMlmState );
+                    FL( "Could not send down Exclude Unencrypted Indication!" ) );
         }
     }
 #endif
@@ -3254,8 +3242,7 @@ void limProcessMlmAddBssRsp( tpAniSirGlobal pMac, tpSirMsgQ limMsgQ )
         if ( eSIR_SUCCESS != limSendExcludeUnencryptInd(pMac, FALSE, psessionEntry) )
         {
             limLog( pMac, LOGE,
-                    FL( "Could not send down Exclude Unencrypted Indication!" ),
-                    psessionEntry->limMlmState );
+                    FL( "Could not send down Exclude Unencrypted Indication!" ) );
         }
     }
 #endif
@@ -3752,6 +3739,36 @@ static void limProcessSwitchChannelJoinReq(tpAniSirGlobal pMac, tpPESession pses
     pMac->lim.gLimTriggerBackgroundScanDuringQuietBss = (val) ? 1 : 0;
     // Apply previously set configuration at HW
     limApplyConfiguration(pMac, psessionEntry);
+
+    /* If sendDeauthBeforeCon is enabled, Send Deauth first to AP if last
+     * disconnection was caused by HB failure.
+     */
+    if(pMac->roam.configParam.sendDeauthBeforeCon)
+    {
+       int apCount;
+
+       for(apCount = 0; apCount < 2; apCount++)
+       {
+
+           if (vos_mem_compare(psessionEntry->pLimMlmJoinReq->bssDescription.bssId,
+                    pMac->lim.gLimHeartBeatApMac[apCount], sizeof(tSirMacAddr)))
+           {
+               limLog(pMac, LOGE, FL("Index %d Sessionid: %d Send deauth on "
+                 "channel %d to BSSID: "MAC_ADDRESS_STR ), apCount,
+                 psessionEntry->peSessionId, psessionEntry->currentOperChannel,
+                 MAC_ADDR_ARRAY(psessionEntry->pLimMlmJoinReq->bssDescription.bssId));
+
+               limSendDeauthMgmtFrame( pMac, eSIR_MAC_UNSPEC_FAILURE_REASON,
+                     psessionEntry->pLimMlmJoinReq->bssDescription.bssId,
+                     psessionEntry, FALSE );
+
+               vos_mem_zero(pMac->lim.gLimHeartBeatApMac[apCount],
+                       sizeof(tSirMacAddr));
+               break;
+           }
+       }
+    }
+
     /// Wait for Beacon to announce join success
     vos_mem_copy(ssId.ssId,
                  psessionEntry->ssId.ssId,
@@ -3762,9 +3779,9 @@ static void limProcessSwitchChannelJoinReq(tpAniSirGlobal pMac, tpPESession pses
 
     //assign appropriate sessionId to the timer object
     pMac->lim.limTimers.gLimPeriodicJoinProbeReqTimer.sessionId = psessionEntry->peSessionId;
-    limLog(pMac, LOG1, FL("Sessionid: %d Send Probe req on channel %d ssid: %s "
-        "BSSID: "MAC_ADDRESS_STR), psessionEntry->peSessionId,
-         psessionEntry->currentOperChannel, ssId.ssId,
+    limLog(pMac, LOG1, FL("Sessionid: %d Send Probe req on channel %d ssid: %.*s "
+        "BSSID: "MAC_ADDRESS_STR ), psessionEntry->peSessionId,
+         psessionEntry->currentOperChannel, ssId.length, ssId.ssId,
          MAC_ADDR_ARRAY(psessionEntry->pLimMlmJoinReq->bssDescription.bssId));
     // include additional IE if there is
     limSendProbeReqMgmtFrame( pMac, &ssId,
@@ -3879,6 +3896,24 @@ void limProcessSwitchChannelRsp(tpAniSirGlobal pMac,  void *body)
             if (pMac->lim.gpchangeChannelCallback)
             {
                 PELOG1(limLog( pMac, LOG1, "Channel changed hence invoke registered call back");)
+                if (eHAL_CHANNEL_SWITCH_SOURCE_CSA == pChnlParams->channelSwitchSrc )
+                {
+                    if (IS_MCC_SUPPORTED && limIsLinkSuspended( pMac ) )
+                    {
+                        if ( psessionEntry && psessionEntry->limSmeState
+                            == eLIM_SME_LINK_EST_STATE )
+                        {
+                            peSetResumeChannel( pMac,
+                                psessionEntry->currentOperChannel,
+                                psessionEntry->htSecondaryChannelOffset);
+                        }
+                        else
+                        {
+                            peSetResumeChannel( pMac, 0, 0);
+                        }
+                        limResumeLink(pMac, limSwitchChannelResumeLinkRsp, NULL);
+                    }
+                }
                 pMac->lim.gpchangeChannelCallback(pMac, status, pMac->lim.gpchangeChannelData, psessionEntry);
             }
             break;
@@ -4160,7 +4195,7 @@ void limProcessMlmHalAddBARsp( tpAniSirGlobal pMac,
     // Allocate for LIM_MLM_ADDBA_CNF
     pMlmAddBACnf = vos_mem_malloc(sizeof(tLimMlmAddBACnf));
     if ( NULL == pMlmAddBACnf ) {
-        limLog( pMac, LOGP, FL(" AllocateMemory failed with error code %d"));
+        limLog( pMac, LOGP, FL(" AllocateMemory failed for pMlmAddBACnf"));
         vos_mem_free(limMsgQ->bodyptr);
         limMsgQ->bodyptr = NULL;
         return;
@@ -4956,7 +4991,7 @@ void limProcessRxScanEvent(tpAniSirGlobal pMac, void *buf)
     tSirScanOffloadEvent *pScanEvent = (tSirScanOffloadEvent *) buf;
 
     VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_INFO,
-            "scan_id = %lu", pScanEvent->scanId);
+            "scan_id = %u", pScanEvent->scanId);
 
     switch (pScanEvent->event)
     {
@@ -4972,6 +5007,18 @@ void limProcessRxScanEvent(tpAniSirGlobal pMac, void *buf)
         case SCAN_EVENT_PREEMPTED:
         default:
             VOS_TRACE(VOS_MODULE_ID_PE, VOS_TRACE_LEVEL_DEBUG,
-                    "Received unhandled scan event %lu", pScanEvent->event);
+                    "Received unhandled scan event %u", pScanEvent->event);
     }
+}
+
+void limSwitchChannelResumeLinkRsp(tpAniSirGlobal pMac,
+                         eHalStatus status,
+                         tANI_U32* mlmAddBssRsp)
+{
+    if (status != eHAL_STATUS_SUCCESS)
+    {
+        limLog(pMac, LOGE,
+            FL(" CSA failed to get the response for resume link"));
+    }
+    return;
 }

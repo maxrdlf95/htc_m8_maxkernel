@@ -1,23 +1,29 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
+*
+* Previously licensed under the ISC license by Qualcomm Atheros, Inc.
+*
+*
+* Permission to use, copy, modify, and/or distribute this software for
+* any purpose with or without fee is hereby granted, provided that the
+* above copyright notice and this permission notice appear in all
+* copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+* WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+* AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+* DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+* PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+* TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+* PERFORMANCE OF THIS SOFTWARE.
+*/
+
+/*
+* This file was originally distributed by Qualcomm Atheros, Inc.
+* under proprietary terms before Copyright ownership was assigned
+* to the Linux Foundation.
+*/
 
 /*==========================================================================
  *
@@ -27,8 +33,6 @@
  *
  *  @author:   Kumar Anand
  *
- *             Copyright (C) 2010, Qualcomm Technologies, Inc. 
- *             All rights reserved.
  *
  *=========================================================================*/
 
@@ -79,7 +83,7 @@ typedef tANI_U8 tHalIpv4Addr[4];
 #define HAL_MAC_ADDR_LEN        6
 #define HAL_IPV4_ADDR_LEN       4
 
-#define WALN_HAL_STA_INVALID_IDX 0xFF
+#define WLAN_HAL_STA_INVALID_IDX 0xFF
 #define WLAN_HAL_BSS_INVALID_IDX 0xFF
 
 //Default Beacon template size
@@ -113,10 +117,10 @@ typedef tANI_U8 tHalIpv4Addr[4];
 #define WLAN_HAL_VERSION_LENGTH  64
 
 #define WLAN_HAL_ROAM_SCAN_MAX_PROBE_SIZE     450
-/* 80 is actually NUM_RF_CHANNELS_V2, but beyond V2,
- * this number will be ignored by FW */
+/* 80 is actually NUM_RF_CHANNELS_V2, but beyond V2, this number will be ignored by FW */
 #define WLAN_HAL_ROAM_SCAN_MAX_CHANNELS       80
-#define WLAN_HAL_ROAM_SCAN_RESERVED_BYTES     56
+#define WLAN_HAL_ROAM_SACN_PMK_SIZE           32
+#define WLAN_HAL_ROAM_SCAN_RESERVED_BYTES     20
 
 /* Message types for messages exchanged between WDI and HAL */
 typedef enum 
@@ -436,18 +440,49 @@ typedef enum
    /* Multi-hop IP routing offload */
    WLAN_HAL_IP_FORWARD_TABLE_UPDATE_IND     = 232,
 
+   /* Channel avoidance for LTE Coex */
    WLAN_HAL_AVOID_FREQ_RANGE_IND            = 233,
+
+   /* Fast Roam Offload Synchup request protocol */
+   /* TODO_LFR3 : change this value accordingly before final check-in */
+   WLAN_HAL_ROAM_OFFLOAD_SYNCH_IND          = 234,
+   WLAN_HAL_ROAM_OFFLOAD_SYNCH_CNF          = 235,
+
+   WLAN_HAL_MOTION_START_EVENT_REQ          = 250,
+   WLAN_HAL_MOTION_STOP_EVENT_REQ           = 251,
+
+   /* Channel Switch Request version 1 */
+   WLAN_HAL_CH_SWITCH_V1_REQ                = 252,
+   WLAN_HAL_CH_SWITCH_V1_RSP                = 253,
+
    /* 2G4 HT40 OBSS scan */
    WLAN_HAL_START_HT40_OBSS_SCAN_IND        = 254,
-   WLAN_HAL_STOP_HT40_OBSS_SCAN_IND         = 255,
+   WLAN_HAL_STOP_HT40_OBSS_SCAN_IND         = 255,/* next free entry in tHalHostMsgType. */
+
+   /* WLAN NAN Messages */
+   WLAN_HAL_NAN_FIRST                       = 256,
+   WLAN_HAL_NAN_REQ                         = WLAN_HAL_NAN_FIRST,
+   WLAN_HAL_NAN_RSP                         = 257,
+   WLAN_HAL_NAN_EVT                         = 258,
+   WLAN_HAL_NAN_LAST                        = WLAN_HAL_NAN_EVT,
 
    /* print register values */
-   WLAN_HAL_PRINT_REG_INFO_IND              = 259, /* Assigned same value that of Master one */
+   WLAN_HAL_PRINT_REG_INFO_IND              = 259,
 
    WLAN_HAL_GET_BCN_MISS_RATE_REQ           = 260,
    WLAN_HAL_GET_BCN_MISS_RATE_RSP           = 261,
 
-  WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
+   /* WLAN LINK LAYER STATS Messages */
+   WLAN_HAL_LL_SET_STATS_REQ                = 262,
+   WLAN_HAL_LL_SET_STATS_RSP                = 263,
+   WLAN_HAL_LL_GET_STATS_REQ                = 264,
+   WLAN_HAL_LL_GET_STATS_RSP                = 265,
+   WLAN_HAL_LL_CLEAR_STATS_REQ              = 266,
+   WLAN_HAL_LL_CLEAR_STATS_RSP              = 267,
+   WLAN_HAL_LL_NOTIFY_STATS                 = 268,
+   WLAN_HAL_LL_LAST                         = WLAN_HAL_LL_NOTIFY_STATS,
+
+   WLAN_HAL_MSG_MAX = WLAN_HAL_MSG_TYPE_MAX_ENUM_SIZE
 }tHalHostMsgType;
 
 /* Enumeration for Version */
@@ -497,6 +532,21 @@ typedef enum
    eHAL_SYS_MODE_OEM_DATA,
    eHAL_SYS_MODE_MAX = WLAN_HAL_MAX_ENUM_SIZE
 } eHalSysMode;
+
+typedef enum
+{
+   eHAL_CHANNEL_SWITCH_SOURCE_SCAN,
+   eHAL_CHANNEL_SWITCH_SOURCE_LISTEN,
+   eHAL_CHANNEL_SWITCH_SOURCE_MCC,
+   eHAL_CHANNEL_SWITCH_SOURCE_CSA,
+   eHAL_CHANNEL_SWITCH_SOURCE_CONFIG_BSS,
+   eHAL_CHANNEL_SWITCH_SOURCE_CONFIG_STA,
+   eHAL_CHANNEL_SWITCH_SOURCE_JOIN_REQ,
+   eHAL_CHANNEL_SWITCH_SOURCE_INNAV,
+   eHAL_CHANNEL_SWITCH_SOURCE_WCA,
+   eHAL_CHANNEL_SWITCH_SOURCE_MLME,
+   eHAL_CHANNEL_SWITCH_SOURCE_MAX = WLAN_HAL_MAX_ENUM_SIZE
+} eHalChanSwitchSource;
 
 typedef enum
 {
@@ -643,6 +693,9 @@ typedef enum eSriLinkState {
     eSIR_LINK_LISTEN_STATE      = 14,
     eSIR_LINK_SEND_ACTION_STATE = 15,
 #endif
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+    eSIR_LINK_FT_PREASSOC_STATE = 16,
+#endif
     eSIR_LINK_MAX = WLAN_HAL_MAX_ENUM_SIZE
 } tSirLinkState;
 
@@ -679,6 +732,218 @@ typedef enum
     PE_PER_STA_STATS_INFO           = 0x00000020,
     PE_STATS_TYPE_MAX = WLAN_HAL_MAX_ENUM_SIZE //This and beyond are invalid values
 }ePEStatsMask;
+
+
+/******************************LINK LAYER Statitics**********************/
+
+typedef int wifi_radio;
+typedef int wifi_channel;
+typedef int wifi_tx_rate;
+
+/* channel operating width */
+typedef enum {
+    WIFI_CHAN_WIDTH_20    = 0,
+    WIFI_CHAN_WIDTH_40    = 1,
+    WIFI_CHAN_WIDTH_80    = 2,
+    WIFI_CHAN_WIDTH_160   = 3,
+    WIFI_CHAN_WIDTH_80P80 = 4,
+    WIFI_CHAN_WIDTH_5     = 5,
+    WIFI_CHAN_WIDTH_10    = 6,
+} wifi_channel_width;
+
+typedef enum {
+    WIFI_DISCONNECTED = 0,
+    WIFI_AUTHENTICATING = 1,
+    WIFI_ASSOCIATING = 2,
+    WIFI_ASSOCIATED = 3,
+    WIFI_EAPOL_STARTED = 4,   // if done by firmware/driver
+    WIFI_EAPOL_COMPLETED = 5, // if done by firmware/driver
+} wifi_connection_state;
+
+typedef enum {
+    WIFI_ROAMING_IDLE = 0,
+    WIFI_ROAMING_ACTIVE = 1,
+} wifi_roam_state;
+
+typedef enum {
+    WIFI_INTERFACE_STA = 0,
+    WIFI_INTERFACE_SOFTAP = 1,
+    WIFI_INTERFACE_IBSS = 2,
+    WIFI_INTERFACE_P2P_CLIENT = 3,
+    WIFI_INTERFACE_P2P_GO = 4,
+    WIFI_INTERFACE_NAN = 5,
+    WIFI_INTERFACE_MESH = 6,
+ } wifi_interface_mode;
+
+#define WIFI_CAPABILITY_QOS          0x00000001     // set for QOS association
+#define WIFI_CAPABILITY_PROTECTED    0x00000002     // set for protected association (802.11 beacon frame control protected bit set)
+#define WIFI_CAPABILITY_INTERWORKING 0x00000004     // set if 802.11 Extended Capabilities element interworking bit is set
+#define WIFI_CAPABILITY_HS20         0x00000008     // set for HS20 association
+#define WIFI_CAPABILITY_SSID_UTF8    0x00000010     // set is 802.11 Extended Capabilities element UTF-8 SSID bit is set
+#define WIFI_CAPABILITY_COUNTRY      0x00000020     // set is 802.11 Country Element is present
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_interface_mode      mode;                      // interface mode
+    tANI_U8                  mac_addr[6];               // interface mac address (self)
+    wifi_connection_state    state;                     // connection state (valid for STA, CLI only)
+    wifi_roam_state          roaming;                   // roaming state
+    tANI_U32                 capabilities;              // WIFI_CAPABILITY_XXX (self)
+    tANI_U8                  ssid[33];                  // null terminated SSID
+    tANI_U8                  bssid[6];                  // bssid
+    tANI_U8                  ap_country_str[3];         // country string advertised by AP
+    tANI_U8                  country_str[3];            // country string for this association
+} wifi_interface_info;
+
+/* channel information */
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_channel_width width;         // channel width (20, 40, 80, 80+80, 160)
+    wifi_channel       center_freq;   // primary 20 MHz channel
+    wifi_channel       center_freq0;  // center frequency (MHz) first segment
+    wifi_channel       center_freq1;  // center frequency (MHz) second segment
+} wifi_channel_info;
+
+/* wifi rate info */
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32 preamble   :3;   // 0: OFDM, 1:CCK, 2:HT 3:VHT 4..7 reserved
+    tANI_U32 nss        :2;   // 0:1x1, 1:2x2, 3:3x3, 4:4x4
+    tANI_U32 bw         :3;   // 0:20MHz, 1:40Mhz, 2:80Mhz, 3:160Mhz
+    tANI_U32 rateMcsIdx :8;   // OFDM/CCK rate code would be as per ieee std in the units of 0.5mbps
+                              // HT/VHT it would be mcs index
+    tANI_U32 reserved  :16;   // reserved
+    tANI_U32 bitrate;         // units of 100 Kbps
+} wifi_rate;
+
+/* channel statistics */
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_channel_info channel;                // channel
+    tANI_U32          on_time;                // msecs the radio is awake (32 bits number accruing over time)
+    tANI_U32          cca_busy_time;          // msecs the CCA register is busy (32 bits number accruing over time)
+} wifi_channel_stats;
+
+/* radio statistics */
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_radio radio;                      // wifi radio (if multiple radio supported)
+    tANI_U32   on_time;                    // msecs the radio is awake (32 bits number accruing over time)
+    tANI_U32   tx_time;                    // msecs the radio is transmitting (32 bits number accruing over time)
+    tANI_U32   rx_time;                    // msecs the radio is in active receive (32 bits number accruing over time)
+    tANI_U32   on_time_scan;               // msecs the radio is awake due to all scan (32 bits number accruing over time)
+    tANI_U32   on_time_nbd;                // msecs the radio is awake due to NAN (32 bits number accruing over time)
+    tANI_U32   on_time_gscan;              // msecs the radio is awake due to G?scan (32 bits number accruing over time)
+    tANI_U32   on_time_roam_scan;          // msecs the radio is awake due to roam?scan (32 bits number accruing over time)
+    tANI_U32   on_time_pno_scan;           // msecs the radio is awake due to PNO scan (32 bits number accruing over time)
+    tANI_U32   on_time_hs20;               // msecs the radio is awake due to HS2.0 scans and GAS exchange (32 bits number accruing over time)
+    tANI_U32   num_channels;               // number of channels
+    wifi_channel_stats channels[1];        // channel statistics
+} wifi_radio_stat;
+
+/* per rate statistics */
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_rate rate;          // rate information  *
+    tANI_U32 tx_mpdu;        // number of successfully transmitted data pkts (ACK rcvd) *
+    tANI_U32 rx_mpdu;        // number of received data pkts
+    tANI_U32 mpdu_lost;      // number of data packet losses (no ACK)
+    tANI_U32 retries;        // total number of data pkt retries *
+    tANI_U32 retries_short;  // number of short data pkt retries
+    tANI_U32 retries_long;   // number of long data pkt retries
+} wifi_rate_stat;
+
+/* access categories */
+typedef enum {
+    WIFI_AC_VO  = 0,
+    WIFI_AC_VI  = 1,
+    WIFI_AC_BE  = 2,
+    WIFI_AC_BK  = 3,
+    WIFI_AC_MAX = 4,
+} wifi_traffic_ac;
+
+/* wifi peer type */
+typedef enum
+{
+    WIFI_PEER_STA,
+    WIFI_PEER_AP,
+    WIFI_PEER_P2P_GO,
+    WIFI_PEER_P2P_CLIENT,
+    WIFI_PEER_NAN,
+    WIFI_PEER_TDLS,
+    WIFI_PEER_INVALID,
+} wifi_peer_type;
+
+/* per peer statistics */
+typedef PACKED_PRE struct PACKED_POST
+{
+    wifi_peer_type type;                       // peer type (AP, TDLS, GO etc.)
+    tANI_U8        peer_mac_address[6];        // mac address
+    tANI_U32       capabilities;               // peer WIFI_CAPABILITY_XXX
+    tANI_U32       num_rate;                   // number of rates
+    wifi_rate_stat rate_stats[1];              // per rate statistics, number of entries  = num_rate
+} wifi_peer_info;
+
+/* per access category statistics */
+typedef PACKED_PRE struct PACKED_POST
+
+{
+    wifi_traffic_ac ac;                  // access category (VI, VO, BE, BK)
+    tANI_U32 tx_mpdu;                    // number of successfully transmitted unicast data pkts (ACK rcvd)
+    tANI_U32 rx_mpdu;                    // number of received unicast mpdus
+    tANI_U32 tx_mcast;                   // number of succesfully transmitted multicast data packets
+                                         // STA case: implies ACK received from AP for the unicast packet in which mcast pkt was sent
+    tANI_U32 rx_mcast;                   // number of received multicast data packets
+    tANI_U32 rx_ampdu;                   // number of received unicast a-mpdus
+    tANI_U32 tx_ampdu;                   // number of transmitted unicast a-mpdus
+    tANI_U32 mpdu_lost;                  // number of data pkt losses (no ACK)
+    tANI_U32 retries;                    // total number of data pkt retries
+    tANI_U32 retries_short;              // number of short data pkt retries
+    tANI_U32 retries_long;               // number of long data pkt retries
+    tANI_U32 contention_time_min;        // data pkt min contention time (usecs)
+    tANI_U32 contention_time_max;        // data pkt max contention time (usecs)
+    tANI_U32 contention_time_avg;        // data pkt avg contention time (usecs)
+    tANI_U32 contention_num_samples;     // num of data pkts used for contention statistics
+} wifi_wmm_ac_stat;
+
+/* Interface statistics - corresponding to 2nd most LSB in wifi statistics bitmap  for getting statistics */
+typedef PACKED_PRE struct PACKED_POST
+
+{
+    wifi_interface_info info;                                       // current state of the interface
+    tANI_U32            beacon_rx;                                  // access point beacon received count from connected AP
+    tANI_U32            mgmt_rx;                                    // access point mgmt frames received count from connected AP (including Beacon)
+    tANI_U32            mgmt_action_rx;                             // action frames received count
+    tANI_U32            mgmt_action_tx;                             // action frames transmit count
+    tANI_U32            rssi_mgmt;                                  // access Point Beacon and Management frames RSSI (averaged)
+    tANI_U32            rssi_data;                                  // access Point Data Frames RSSI (averaged) from connected AP
+    tANI_U32            rssi_ack;                                   // access Point ACK RSSI (averaged) from connected AP
+    wifi_wmm_ac_stat    AccessclassStats[WIFI_AC_MAX];              // per ac data packet statistics
+} wifi_iface_stat;
+
+/* Peer statistics - corresponding to 3rd most LSB in wifi statistics bitmap  for getting statistics */
+typedef PACKED_PRE struct PACKED_POST
+{
+    tANI_U32       num_peers;                            // number of peers
+    wifi_peer_info peer_info[1];                         // per peer statistics
+} wifi_peer_stat;
+
+/* wifi statistics bitmap  for getting statistics */
+#define WMI_LINK_STATS_RADIO          0x00000001
+#define WMI_LINK_STATS_IFACE          0x00000002
+#define WMI_LINK_STATS_ALL_PEER       0x00000004
+#define WMI_LINK_STATS_PER_PEER       0x00000008
+
+/* wifi statistics bitmap  for clearing statistics */
+#define WIFI_STATS_RADIO              0x00000001      // all radio statistics
+#define WIFI_STATS_RADIO_CCA          0x00000002      // cca_busy_time (within radio statistics)
+#define WIFI_STATS_RADIO_CHANNELS     0x00000004      // all channel statistics (within radio statistics)
+#define WIFI_STATS_RADIO_SCAN         0x00000008      // all scan statistics (within radio statistics)
+#define WIFI_STATS_IFACE              0x00000010      // all interface statistics
+#define WIFI_STATS_IFACE_TXRATE       0x00000020      // all tx rate statistics (within interface statistics)
+#define WIFI_STATS_IFACE_AC           0x00000040      // all ac statistics (within interface statistics)
+#define WIFI_STATS_IFACE_CONTENTION   0x00000080      // all contention (min, max, avg) statistics (within ac statisctics)
+
 
 /*---------------------------------------------------------------------------
   Message definitons - All the messages below need to be packed
@@ -1087,6 +1352,11 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tStartScanParams startScanParams;
 }  tHalStartScanReqMsg, *tpHalStartScanReqMsg;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+}  tHalMotionEventReqMsg, *tpHalMotionEventReqMsg;
 
 /*---------------------------------------------------------------------------
   WLAN_HAL_START_SCAN_RSP
@@ -1707,10 +1977,10 @@ typedef enum
 // IFACE PERSONA for different Operating modes
 typedef enum
 {
-    HAL_IFACE_UNKNOWN,
-    HAL_IFACE_STA_MODE,
-    HAL_IFACE_P2P_MODE,
-    HAL_IFACE_MAX
+    HAL_IFACE_UNKNOWN=0,
+    HAL_IFACE_STA_MODE=1,
+    HAL_IFACE_P2P_MODE=2,
+    HAL_IFACE_MAX=0x7FFFFFFF,
 } tHalIfacePersona;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -2389,7 +2659,80 @@ typedef PACKED_PRE struct PACKED_POST
 
 #endif
 
+/*---------------------------------------------------------------------------
+WLAN_HAL_CH_SWITCH_V1_REQ
+---------------------------------------------------------------------------*/
 
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Channel number */
+    tANI_U8 channelNumber;
+
+    /* Local power constraint */
+    tANI_U8 localPowerConstraint;
+
+    /*Secondary channel offset */
+    ePhyChanBondState secondaryChannelOffset;
+
+    //HAL fills in the tx power used for mgmt frames in this field.
+    tPowerdBm txMgmtPower;
+
+    /* Max TX power */
+    tPowerdBm maxTxPower;
+
+    /* Self STA MAC */
+    tSirMacAddr selfStaMacAddr;
+
+    /*VO WIFI comment: BSSID needed to identify session. As the request has
+     * power constraints, this should be applied only to that session
+     * Since MTU timing and EDCA are sessionized, this struct needs to be
+     * sessionized and bssid needs to be out of the VOWifi feature flag
+     * V IMP: Keep bssId field at the end of this msg. It is used to
+     * mantain backward compatbility
+     * by way of ignoring if using new host/old FW or old host/new FW since
+     * it is at the end of this struct
+     */
+    tSirMacAddr bssId;
+
+    /* Source of Channel Switch */
+    eHalChanSwitchSource channelSwitchSrc;
+
+} tSwitchChannelParams_V1, *tpSwitchChannelParams_V1;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tSwitchChannelParams_V1 switchChannelParams_V1;
+} tSwitchChannelReqMsg_V1, *tpSwitchChannelReqMsg_V1;
+
+/*---------------------------------------------------------------------------
+WLAN_HAL_CH_SWITCH_V1_RSP
+---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Status */
+    tANI_U32 status;
+
+    /* Channel number - same as in request*/
+    tANI_U8 channelNumber;
+
+    /* HAL fills in the tx power used for mgmt frames in this field */
+    tPowerdBm txMgmtPower;
+
+    /* BSSID needed to identify session - same as in request*/
+    tSirMacAddr bssId;
+
+    /* Source of Channel Switch */
+    eHalChanSwitchSource channelSwitchSrc;
+
+} tSwitchChannelRspParams_V1, *tpSwitchChannelRspParams_V1;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tSwitchChannelRspParams_V1 channelSwitchRspParams_V1;
+} tSwitchChannelRspMsg_V1, *tpSwitchChannelRspMsg_V1;
 
 /*---------------------------------------------------------------------------
 WLAN_HAL_CH_SWITCH_REQ
@@ -3592,6 +3935,10 @@ typedef PACKED_PRE struct PACKED_POST
    tANI_U8  bssIdx;
    tANI_U8  uReasonCode;
    tANI_U32  uStatus;
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+   tANI_U8  staAddr[6];
+   tANI_U8  bssId[6];
+#endif
 } tIndicateDelSta, *tpIndicateDelSta;
 
 /*---------------------------------------------------------------------------
@@ -3949,9 +4296,8 @@ typedef PACKED_PRE struct PACKED_POST
 /*---------------------------------------------------------------------------
  * FEATURE_WLAN_LPHB IND
  *--------------------------------------------------------------------------*/
-#define WIFI_LPHB_EVENT_REASON_TIMEOUT        0x01
-#define WIFI_LPHB_EVENT_REASON_FW_ON_MONITOR  0x02
-#define WIFI_LPHB_EVENT_REASON_FW_OFF_MONITOR 0x03
+#define WIFI_HB_EVENT_TCP_RX_TIMEOUT 0x0001
+#define WIFI_HB_EVENT_UDP_RX_TIMEOUT 0x0002
 
 #define WIFI_LPHB_EVENT_REASON_TIMEOUT 0x01
 #define WIFI_LPHB_EVENT_REASON_FW_ON_MONITOR 0x02
@@ -4541,6 +4887,9 @@ typedef PACKED_PRE struct PACKED_POST
     tANI_U32             uBssIdx             : 8;
     tANI_U32             isBTCoexCompromise  : 1;
     tANI_U32             bReserved           : 9;
+    tANI_S8              refRssiThreshold1;
+    tANI_S8              refRssiThreshold2;
+    tANI_S8              refRssiThreshold3;
 } tHalRSSINotification, *tpHalRSSINotification;
 
 typedef PACKED_PRE struct PACKED_POST
@@ -4961,6 +5310,15 @@ typedef PACKED_PRE struct PACKED_POST
 
 typedef PACKED_PRE struct PACKED_POST
 {
+    tHalMsgHeader header;
+    tAddStaSelfParams addStaSelfParams;
+}tAddStaSelfReq, *tpAddStaSelfReq;
+
+/* This V1 structure carries additionally the IFACE PERSONA
+   of the interface as compared to the legacy control
+   message */
+typedef PACKED_PRE struct PACKED_POST
+{
   tSirMacAddr selfMacAddr;
   tANI_U32    status;
   tHalIfacePersona iface_persona;
@@ -4969,11 +5327,8 @@ typedef PACKED_PRE struct PACKED_POST
 typedef PACKED_PRE struct PACKED_POST
 {
     tHalMsgHeader header;
-    PACKED_PRE union PACKED_POST {
-    tAddStaSelfParams addStaSelfParams;
     tAddStaSelfParams_V1 addStaSelfParams_V1;
-    }uAddStaSelfParams;
-}tAddStaSelfReq, *tpAddStaSelfReq;
+}tAddStaSelfReq_V1, *tpAddStaSelfReq_V1;
 
 /*---------------------------------------------------------------------------
 *WLAN_HAL_ADD_SELF_STA_RSP
@@ -5621,6 +5976,11 @@ typedef PACKED_PRE struct PACKED_POST {
    tANI_U16          HomeAwayTime;
    eAniBoolean       MAWCEnabled;
    tANI_S8           RxSensitivityThreshold;
+   tANI_U8           RoamOffloadEnabled;
+   tANI_U8           PMK[WLAN_HAL_ROAM_SACN_PMK_SIZE];
+   tANI_U8           Prefer5GHz;
+   tANI_U8           RoamRssiCatGap;
+   tANI_U8           Select5GHzMargin;
    tANI_U8           ReservedBytes[WLAN_HAL_ROAM_SCAN_RESERVED_BYTES];
    tRoamNetworkType  ConnectedNetwork;
    tMobilityDomainInfo MDID;
@@ -6122,6 +6482,10 @@ typedef enum {
     CH_SWITCH_V1           = 33,
     HT40_OBSS_SCAN         = 34,
     UPDATE_CHANNEL_LIST    = 35,
+    WLAN_MCADDR_FLT        = 36,
+    WLAN_CH144             = 37,
+    NAN                    = 38,
+    TDLS_SCAN_COEXISTENCE  = 39,
     MAX_FEATURE_SUPPORTED  = 128,
 } placeHolderInCapBitmap;
 
@@ -6132,7 +6496,7 @@ typedef PACKED_PRE struct PACKED_POST{
 
 typedef PACKED_PRE struct PACKED_POST{
 
-   tHalMsgHeader header;
+   tHalMsgHeader header;    
    tWlanFeatCaps wlanFeatCaps;
 
 }  tWlanFeatCapsMsg, *tpWlanFeatCapsMsg;
@@ -6144,6 +6508,8 @@ typedef PACKED_PRE struct PACKED_POST{
 #define IS_WLAN_ROAM_SCAN_OFFLOAD_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(WLAN_ROAM_SCAN_OFFLOAD)))
 #define IS_IBSS_HEARTBEAT_OFFLOAD_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(IBSS_HEARTBEAT_OFFLOAD)))
 #define IS_SCAN_OFFLOAD_SUPPORTED_BY_HOST (!!(halMsg_GetHostWlanFeatCaps(WLAN_SCAN_OFFLOAD)))
+#define IS_CH_SWITCH_V1_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(CH_SWITCH_V1))))
+#define IS_TDLS_SCAN_COEXISTENCE_SUPPORTED_BY_HOST ((!!(halMsg_GetHostWlanFeatCaps(TDLS_SCAN_COEXISTENCE))))
 
 tANI_U8 halMsg_GetHostWlanFeatCaps(tANI_U8 feat_enum_value);
 
@@ -6798,11 +7164,11 @@ typedef enum {
 #define WLAN_HAL_CHAN_CHANGE_CAUSE_CSA 13  /* Indicate reason for channel switch */
 
 #define WLAN_HAL_SET_CHANNEL_FLAG(pwlan_hal_update_channel,flag) do { \
-        (pwlan_hal_update_channel)->channel_info |=  (1 << flag);      \
+        (pwlan_hal_update_channel)->info |=  (1 << flag);      \
      } while(0)
 
 #define WLAN_HAL_GET_CHANNEL_FLAG(pwlan_hal_update_channel,flag)   \
-        (((pwlan_hal_update_channel)->channel_info & (1 << flag)) >> flag)
+        (((pwlan_hal_update_channel)->info & (1 << flag)) >> flag)
 
 #define WLAN_HAL_SET_CHANNEL_MIN_POWER(pwlan_hal_update_channel,val) do { \
      (pwlan_hal_update_channel)->reg_info_1 &= 0xffffff00;           \
@@ -6925,6 +7291,129 @@ typedef PACKED_PRE struct PACKED_POST
 } tWlanIpForwardTableUpdateInd;
 
 /*---------------------------------------------------------------------------
+ * WLAN_HAL_ROAM_OFFLOAD_SYNCH_IND
+ *-------------------------------------------------------------------------*/
+typedef enum
+{
+    /* reassociation is done, but couldn't finish security handshake */
+    WLAN_HAL_ROAM_AUTH_STATUS_CONNECTED = 1,
+
+    /* roam has successfully completed by firmware */
+    WLAN_HAL_ROAM_AUTH_STATUS_AUTHENTICATED = 2,
+
+    /* UNKONW error */
+    WLAN_HAL_ROAM_AUTH_STATUS_UNKONWN = WLAN_HAL_MAX_ENUM_SIZE
+}tHalRoamOffloadRoamAuthStatus;
+
+typedef enum
+{
+    WLAN_HAL_ROAM_TYPE_WPA_PSK,
+    WLAN_HAL_ROAM_TYPE_WPA2_PSK,
+    WLAN_HAL_ROAM_TYPE_OKC,
+    WLAN_HAL_ROAM_TYPE_CCKM,
+    WLAN_HAL_ROAM_TYPE_FT,
+    WLAN_HAL_ROAM_TYPE_MAX = WLAN_HAL_MAX_ENUM_SIZE
+} tHalRoamOffloadType;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* Offset of beacon / probe resp in this structure. Offset from the starting of the message */
+    tANI_U16 beaconProbeRespOffset;
+
+    /* Length of beaon / probe resp. */
+    tANI_U16 beaconProbeRespLength;
+
+    /* Offset of reassoc resp in this structure. Offset from the starting of the message */
+    tANI_U16 reassocRespOffset;
+
+    /* Length of reassoc resp. */
+    tANI_U16 reassocRespLength;
+
+    /* 0 for probe response frame, 1 for beacon frame,  */
+    tANI_U8     isBeacon;
+
+    /* staIdx of old AP */
+    tANI_U8     oldStaIdx;
+
+    /* note : from bssIdx field to txMgmtPower are exactly mapped to
+       tConfigBssRspParams */
+    /* bssIdx of new roamed AP */
+    tANI_U8     bssIdx;
+
+    /* DPU descriptor index for PTK */
+    tANI_U8    dpuDescIndx;
+
+    /* PTK DPU signature */
+    tANI_U8    ucastDpuSignature;
+
+    /* DPU descriptor index for GTK*/
+    tANI_U8    bcastDpuDescIndx;
+
+    /* GTK DPU signature */
+    tANI_U8    bcastDpuSignature;
+
+    /*DPU descriptor for IGTK*/
+    tANI_U8    mgmtDpuDescIndx;
+
+    /* IGTK DPU signature */
+    tANI_U8    mgmtDpuSignature;
+
+    /* Station Index for BSS entry*/
+    tANI_U8    staIdx;
+
+    /* Self station index for this BSS */
+    tANI_U8    selfStaIdx;
+
+    /* Bcast station for buffering bcast frames in AP role */
+    tANI_U8    bcastStaIdx;
+
+    /* MAC address of roamed AP */
+    tSirMacAddr bssid;
+
+    /*HAL fills in the tx power used for mgmt frames in this field. */
+    tANI_S8     txMgmtPower;
+
+    /* success or failure */
+    tHalRoamOffloadRoamAuthStatus authStatus;
+
+    /* TODO : add more info as needed */
+
+    /* beaconProbeRespOffset points to starting of beacon/probe resp frame */
+    /* Beacon or probe resp from new AP.  This is in 802.11
+       frame format starting with MAC header. */
+    /* Up to beaconProbeRespLength */
+
+    /* reassocRespOffset points to starting of reassoc resp frame */
+    /* Reassoc resp from new AP.  This is in 802.11
+       frame format starting with MAC header. */
+    /* Up to reassocRespLength */
+
+} tHalRoamOffloadSynchIndParams, *tpHalRoamOffloadSynchIndParams;
+
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tHalRoamOffloadSynchIndParams params;
+} tHalRoamOffloadSynchInd, *tpHalRoamOffloadSynchInd;
+
+/*---------------------------------------------------------------------------
+ * WLAN_HAL_ROAM_OFFLOAD_SYNCH_CNF
+ *-------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+    /* MAC address of new AP indicated by FW in RoamOffloadSynchInd */
+    tSirMacAddr bssid;
+} tHalRoamOffloadSynchCnfParams, *tpHalRoamOffloadSynchCnfParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+    tHalMsgHeader header;
+    tHalRoamOffloadSynchCnfParams params;
+} tHalRoamOffloadSynchCnfMsg, *tpHalRoamOffloadSynchCnfMsg;
+
+
+/*---------------------------------------------------------------------------
  WLAN_HAL_RATE_UPDATE_IND
  *-------------------------------------------------------------------------*/
 
@@ -7003,20 +7492,23 @@ typedef enum
 typedef PACKED_PRE struct PACKED_POST
 {
    tHT40OBssScanCmdType cmdType;
+
    tSirScanType scanType;
-   tANI_U16     OBSSScanPassiveDwellTime; // In TUs
-   tANI_U16     OBSSScanActiveDwellTime;  // In TUs
-   tANI_U16     BSSChannelWidthTriggerScanInterval; // In seconds
-   tANI_U16     OBSSScanPassiveTotalPerChannel; // In TUs
-   tANI_U16     OBSSScanActiveTotalPerChannel;  // In TUs
-   tANI_U16     BSSWidthChannelTransitionDelayFactor;
-   tANI_U16     OBSSScanActivityThreshold;
+   tANI_U16 OBSSScanPassiveDwellTime; // In TUs
+   tANI_U16 OBSSScanActiveDwellTime;  // In TUs
+   tANI_U16 BSSChannelWidthTriggerScanInterval; // In seconds
+   tANI_U16 OBSSScanPassiveTotalPerChannel; // In TUs
+   tANI_U16 OBSSScanActiveTotalPerChannel;  // In TUs
+   tANI_U16 BSSWidthChannelTransitionDelayFactor;
+   tANI_U16 OBSSScanActivityThreshold;
+
    tANI_U8      selfStaIdx;
    tANI_U8      bssIdx;
    tANI_U8      fortyMHZIntolerent;
    tANI_U8      channelCount;
    tANI_U8      channels[WLAN_HAL_ROAM_SCAN_MAX_CHANNELS];
    tANI_U8      currentOperatingClass;
+
    tANI_U16     ieFieldLen;
    tANI_U8      ieField[WLAN_HAL_PNO_MAX_PROBE_SIZE];
 }tHT40ObssScanIndType, *tpHT40ObssScanIndType;
@@ -7035,6 +7527,123 @@ typedef PACKED_PRE struct PACKED_POST
    tHalMsgHeader header;
    tANI_U8       bssIdx;
 }  tHalStopHT40OBSSScanIndMsg, *tpHalStopHT40OBSSScanIndMsg;
+/*--------------------------------------------------------------------------
+* WLAN_HAL_LL_SET_STATS_REQ
+*---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32  req_id;
+   tANI_U8   sta_id;
+   tANI_U32  mpdu_size_threshold;             // threshold to classify the pkts as short or long
+   tANI_U32  aggressive_statistics_gathering; // set for field debug mode. Driver should collect all statistics regardless of performance impact.
+} tHalMacLlSetStatsReqParams, *tpHalMacLlSetStatsReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlSetStatsReqParams LlSetStatsReqParams;
+}  tHalMacLlSetStatsReq, *tpHalMacLlSetStatsReq;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_SET_STATS_RSP
+---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+  tANI_U32  status;
+  tANI_U32  resp_id;
+  tANI_U8   iface_id;
+} tHalMacLlSetStatsRspParams, *tpHalMacLlSetStatsRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlSetStatsRspParams LlSetStatsRspParams;
+}  tHalMacLlSetStatsRsp, *tpHalMacLlSetStatsRsp;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_GET_STATS_REQ
+---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32  req_id;
+   tANI_U8   sta_id;
+   tANI_U32  param_id_mask;
+}  tHalMacLlGetStatsReqParams, *tpHalMacLlGetStatsReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlGetStatsReqParams LlGetStatsReqParams;
+}  tHalMacLlGetStatsReq, *tpHalMacLlGetStatsReq;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_GET_STATS_RSP
+---------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32  status;
+   tANI_U32  resp_id;
+   tANI_U8   iface_id;
+}  tHalMacLlGetStatsRspParams, *tpHalMacLlGetStatsRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlGetStatsRspParams LlGetStatsRspParams;
+}  tHalMacLlGetStatsRsp, *tpHalMacLlGetStatsRsp;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_CLEAR_STATS_REQ
+---------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32  req_id;
+   tANI_U8   sta_id;
+   tANI_U32  stats_clear_req_mask;
+   tANI_U8   stop_req;
+} tHalMacLlClearStatsReqParams, *tpHalMacLlClearStatsReqParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlClearStatsReqParams LlClearStatsReqParams;
+}  tHalMacLlClearStatsReq, *tpHalMacLlClearStatsReq;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_CLEAR_STATS_RSP
+---------------------------------------------------------------------------*/
+typedef PACKED_PRE struct PACKED_POST
+{
+   tANI_U32 status;
+   tANI_U8  sta_id;
+   tANI_U32 resp_id;
+   tANI_U32 stats_clear_rsp_mask;
+   tANI_U8  stop_req_status;
+}  tHalMacLlClearStatsRspParams, *tpHalMacLlClearStatsRspParams;
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tHalMacLlClearStatsRspParams LlClearStatsRspParams;
+}  tHalMacLlClearStatsRsp, *tpHalMacLlClearStatsRsp;
+
+/*---------------------------------------------------------------------------
+  WLAN_HAL_LL_NOTIFY_STATS
+---------------------------------------------------------------------------*/
+
+typedef PACKED_PRE struct PACKED_POST
+{
+   tHalMsgHeader header;
+   tANI_U32 param_id;
+   tANI_U8  iface_id;
+   tANI_U32 resp_id;
+   tANI_U32 more_result_to_follow;
+   tANI_U8  result[1];
+}  tHalMacLlNotifyStats, *tpHalMacLlNotifyStats;
+
 #if defined(__ANI_COMPILER_PRAGMA_PACK_STACK)
 #pragma pack(pop)
 #elif defined(__ANI_COMPILER_PRAGMA_PACK)

@@ -47,11 +47,6 @@
   TL.
 
   The remaining functions are utility functions for information hiding.
-
-
-               Copyright (c) 2008-9 Qualcomm Technologies, Inc.
-               All Rights Reserved.
-               Qualcomm Technologies Confidential and Proprietary
 ============================================================================*/
 /* $Header$ */
 

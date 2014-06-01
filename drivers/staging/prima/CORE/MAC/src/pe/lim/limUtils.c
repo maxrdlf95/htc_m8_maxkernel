@@ -18,29 +18,15 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
- *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
 
 /*
- * Airgo Networks, Inc proprietary. All rights reserved.
+ * This file was originally distributed by Qualcomm Atheros, Inc.
+ * under proprietary terms before Copyright ownership was assigned
+ * to the Linux Foundation.
+ */
+
+
+/*
  * This file limUtils.cc contains the utility functions
  * LIM uses.
  * Author:        Chandra Modumudi
@@ -82,29 +68,25 @@ static tAniBool glimTriggerBackgroundScanDuringQuietBss_Status = eSIR_TRUE;
 
 /* 11A Channel list to decode RX BD channel information */
 static const tANI_U8 abChannel[]= {36,40,44,48,52,56,60,64,100,104,108,112,116,
-            120,124,128,132,136,140,149,153,157,161,165
-#ifdef FEATURE_WLAN_CH144
-                ,144
-#endif
-};
+            120,124,128,132,136,140,149,153,157,161,165,144};
 #define abChannelSize (sizeof(abChannel)/  \
         sizeof(abChannel[0]))
 
 #ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
 static const tANI_U8 aUnsortedChannelList[]= {52,56,60,64,100,104,108,112,116,
-            120,124,128,132,136,140,36,40,44,48,149,153,157,161,165
-#ifdef FEATURE_WLAN_CH144
-                ,144
-#endif
-};
+            120,124,128,132,136,140,36,40,44,48,149,153,157,161,165,144};
 #define aUnsortedChannelListSize (sizeof(aUnsortedChannelList)/  \
         sizeof(aUnsortedChannelList[0]))
 #endif
 
-//#define LIM_MAX_ACTIVE_SESSIONS 3  //defined temporarily for BT-AMP SUPPORT 
+//#define LIM_MAX_ACTIVE_SESSIONS 3  //defined temporarily for BT-AMP SUPPORT
 #define SUCCESS 1                   //defined temporarily for BT-AMP
 
 #define MAX_BA_WINDOW_SIZE_FOR_CISCO 25
+static void
+limProcessChannelSwitchSuspendLink(tpAniSirGlobal pMac,
+                                    eHalStatus status,
+                                    tANI_U32 *ctx);
 /** -------------------------------------------------------------
 \fn limAssignDialogueToken
 \brief Assigns dialogue token.
@@ -2596,9 +2578,21 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
     switch(psessionEntry->gLimChannelSwitch.state)
     {
         case eLIM_CHANNEL_SWITCH_PRIMARY_ONLY:
-            PELOGW(limLog(pMac, LOGW, FL("CHANNEL_SWITCH_PRIMARY_ONLY "));)
-            limSwitchPrimaryChannel(pMac, psessionEntry->gLimChannelSwitch.primaryChannel,psessionEntry);
-            psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_IDLE;
+        case eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY:
+            if ( isLimSessionOffChannel(pMac,
+                pMac->lim.limTimers.gLimChannelSwitchTimer.sessionId) )
+            {
+                limSuspendLink(pMac,
+                    eSIR_DONT_CHECK_LINK_TRAFFIC_BEFORE_SCAN,
+                    limProcessChannelSwitchSuspendLink,
+                    (tANI_U32*)psessionEntry );
+            }
+            else
+            {
+                limProcessChannelSwitchSuspendLink(pMac,
+                    eHAL_STATUS_SUCCESS,
+                    (tANI_U32*)psessionEntry);
+            }
             break;
 
         case eLIM_CHANNEL_SWITCH_SECONDARY_ONLY:
@@ -2608,15 +2602,6 @@ void limProcessChannelSwitchTimeout(tpAniSirGlobal pMac)
                                              psessionEntry->gLimChannelSwitch.secondarySubBand);
             psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_IDLE;
             break;
-
-        case eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY:
-            PELOGW(limLog(pMac, LOGW, FL("CHANNEL_SWITCH_PRIMARY_AND_SECONDARY"));)
-            limSwitchPrimarySecondaryChannel(pMac, psessionEntry,
-                                             psessionEntry->gLimChannelSwitch.primaryChannel,
-                                             psessionEntry->gLimChannelSwitch.secondarySubBand);
-            psessionEntry->gLimChannelSwitch.state = eLIM_CHANNEL_SWITCH_IDLE;
-            break;
-
         case eLIM_CHANNEL_SWITCH_IDLE:
         default:
             PELOGE(limLog(pMac, LOGE, FL("incorrect state "));)
@@ -2730,6 +2715,8 @@ limUpdateChannelSwitch(struct sAniSirGlobal *pMac,  tpSirProbeRespBeacon pBeacon
             }
         }
      }
+
+
     if (eSIR_SUCCESS != limStartChannelSwitch(pMac, psessionEntry))
     {
         PELOGW(limLog(pMac, LOGW, FL("Could not start Channel Switch"));)
@@ -7760,41 +7747,44 @@ tANI_BOOLEAN limCheckVHTOpModeChange( tpAniSirGlobal pMac, tpPESession psessionE
 }
 #endif
 
-tANI_U8 limGetShortSlotFromPhyMode(tpAniSirGlobal pMac, tpPESession psessionEntry, tANI_U32 phyMode)
+void limGetShortSlotFromPhyMode(tpAniSirGlobal pMac, tpPESession psessionEntry,
+                                   tANI_U32 phyMode, tANI_U8 *pShortSlotEnabled)
 {
     tANI_U8 val=0;
 
-    if (phyMode == WNI_CFG_PHY_MODE_11A)
+    //only 2.4G band should have short slot enable, rest it should be default
+    if (phyMode == WNI_CFG_PHY_MODE_11G)
     {
-        // 11a mode always uses short slot
-        // Check this since some APs in 11a mode broadcast long slot in their beacons. As per standard, always use what PHY mandates.
-        val = true;
-    }
-    else if (phyMode == WNI_CFG_PHY_MODE_11G)
-    {
+        /* short slot is default in all other modes */
         if ((psessionEntry->pePersona == VOS_STA_SAP_MODE) ||
             (psessionEntry->pePersona == VOS_IBSS_MODE) ||
             (psessionEntry->pePersona == VOS_P2P_GO_MODE))
         {
             val = true;
         }
-
         // Program Polaris based on AP capability
-
         if (psessionEntry->limMlmState == eLIM_MLM_WT_JOIN_BEACON_STATE)
+        {
             // Joining BSS.
             val = SIR_MAC_GET_SHORT_SLOT_TIME( psessionEntry->limCurrentBssCaps);
+        }
         else if (psessionEntry->limMlmState == eLIM_MLM_WT_REASSOC_RSP_STATE)
+        {
             // Reassociating with AP.
             val = SIR_MAC_GET_SHORT_SLOT_TIME( psessionEntry->limReassocBssCaps);
+        }
     }
-    else // if (phyMode == WNI_CFG_PHY_MODE_11B) - use this if another phymode is added later ON
+    else
     {
-        // Will reach here in 11b case
+        /*
+         * 11B does not short slot and short slot is default
+         * for 11A mode. Hence, not need to set this bit
+         */
         val = false;
     }
+
     limLog(pMac, LOG1, FL("phyMode = %u shortslotsupported = %u"), phyMode, val);
-    return val;
+    *pShortSlotEnabled = val;
 }
 
 void limUtilsframeshtons(tpAniSirGlobal    pCtx,
@@ -7948,7 +7938,6 @@ void limPmfSaQueryTimerHandler(void *pMacGlobal, tANI_U32 param)
     {
         limLog(pMac, LOGE, FL("Session does not exist for given session ID %d"),
                timerId.fields.sessionId);
-        pSta->pmfSaQueryState = DPH_SA_QUERY_NOT_IN_PROGRESS;
         return;
     }
     if ((pSta = dphGetHashEntry(pMac, timerId.fields.peerIdx,
@@ -7973,8 +7962,6 @@ void limPmfSaQueryTimerHandler(void *pMacGlobal, tANI_U32 param)
     if (pSta->pmfSaQueryRetryCount >= maxRetries)
     {
         limLog(pMac, LOG1, FL("SA Query timed out"));
-        /* remove before submission */
-        limLog(pMac, LOGE, FL("SA Query timed out"));
         pSta->pmfSaQueryState = DPH_SA_QUERY_TIMED_OUT;
         return;
     }
@@ -7983,8 +7970,6 @@ void limPmfSaQueryTimerHandler(void *pMacGlobal, tANI_U32 param)
     limSendSaQueryRequestFrame(pMac, (tANI_U8 *)&(pSta->pmfSaQueryCurrentTransId),
                                pSta->staAddr, psessionEntry);
     pSta->pmfSaQueryCurrentTransId++;
-    /* remove before submission */
-    limLog(pMac, LOGE, FL("Starting SA Query retry %d"), pSta->pmfSaQueryRetryCount);
     if (tx_timer_activate(&pSta->pmfSaQueryTimer) != TX_SUCCESS)
     {
         limLog(pMac, LOGE, FL("PMF SA Query timer activation failed!"));
@@ -7992,6 +7977,72 @@ void limPmfSaQueryTimerHandler(void *pMacGlobal, tANI_U32 param)
     }
 }
 #endif
+
+/** ---------------------------------------------------------
+\fn  limProcessChannelSwitchSuspendLink
+\brief   This function call channel switch functions based on
+         the gLimChannelSwitch.state. After function return it
+         reset the state to eLIM_CHANNEL_SWITCH_IDLE.
+         If gLimChannelSwitch.state is non-identified then
+         print error log as well as restore back the
+         pre-channelSwitch.
+\param   tpAniSirGlobal  pMac
+\param   eHalStatus   status
+\param   tANI_U32        *ctx
+\return  None
+ ------------------------------------------------------------*/
+static void
+limProcessChannelSwitchSuspendLink(tpAniSirGlobal pMac,
+                                    eHalStatus status,
+                                    tANI_U32 *ctx)
+{
+    tpPESession         pSessionEntry = (tpPESession)ctx;
+
+    if ( eHAL_STATUS_SUCCESS != status )
+    {
+        limLog(pMac, LOGE,
+            FL("Suspend link failed. still proceeding "));
+    }
+    if (NULL == pSessionEntry )
+    {
+        limLog(pMac, LOGE, FL("pSessionEntry is null pointer "));
+        return;
+    }
+
+    switch(pSessionEntry->gLimChannelSwitch.state)
+    {
+        case eLIM_CHANNEL_SWITCH_PRIMARY_ONLY:
+            PELOGW(limLog(pMac, LOGW,
+                FL("CHANNEL_SWITCH_PRIMARY_ONLY "));)
+            limSwitchPrimaryChannel(pMac,
+                pSessionEntry->gLimChannelSwitch.primaryChannel,
+                pSessionEntry);
+            pSessionEntry->gLimChannelSwitch.state =
+                eLIM_CHANNEL_SWITCH_IDLE;
+            break;
+
+        case eLIM_CHANNEL_SWITCH_PRIMARY_AND_SECONDARY:
+            PELOGW(limLog(pMac, LOGW,
+                FL("CHANNEL_SWITCH_PRIMARY_AND_SECONDARY"));)
+            limSwitchPrimarySecondaryChannel(pMac, pSessionEntry,
+                 pSessionEntry->gLimChannelSwitch.primaryChannel,
+                 pSessionEntry->gLimChannelSwitch.secondarySubBand);
+            pSessionEntry->gLimChannelSwitch.state =
+                eLIM_CHANNEL_SWITCH_IDLE;
+            break;
+
+        default:
+            PELOGE(limLog(pMac, LOGW, FL("incorrect state %d"),
+                   pSessionEntry->gLimChannelSwitch.state);)
+            if (limRestorePreChannelSwitchState(pMac,
+                pSessionEntry) != eSIR_SUCCESS)
+            {
+                limLog(pMac, LOGE,
+                    FL("Could not restore pre-channelSwitch "
+                    "(11h) state, resetting the system"));
+            }
+    }
+}
 
 /** ---------------------------------------------------------
 \fn  limInitOBSSScanParams

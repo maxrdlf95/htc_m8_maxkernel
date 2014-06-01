@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -18,26 +18,14 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
+
 /*
- * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2014 Qualcomm Atheros, Inc.
+ * All Rights Reserved.
+ * Qualcomm Atheros Confidential and Proprietary.
  *
- * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
- *
- *
- * Permission to use, copy, modify, and/or distribute this software for
- * any purpose with or without fee is hereby granted, provided that the
- * above copyright notice and this permission notice appear in all
- * copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
- * WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
- * AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
- * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
- * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
  */
+
 
 /** ------------------------------------------------------------------------ *
     ------------------------------------------------------------------------ *
@@ -161,7 +149,6 @@ static const hdd_freq_chan_map_t freq_chan_map[] = { {2412, 1}, {2417, 2},
 #define WE_SET_MAX_TX_POWER_5_0   12
 /* Private IOCTL for debug connection issues */
 #define WE_SET_DEBUG_LOG     13
-
 
 /* Private ioctls and their sub-ioctls */
 #define WLAN_PRIV_SET_NONE_GET_INT    (SIOCIWFIRSTPRIV + 1)
@@ -502,7 +489,7 @@ int hdd_wlan_get_rts_threshold(hdd_adapter_t *pAdapter, union iwreq_data *wrqu)
     wrqu->rts.value = threshold;
 
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                                 ("Rts-Threshold=%ld!!"), wrqu->rts.value);
+                                 ("Rts-Threshold=%d!!"), wrqu->rts.value);
 
     EXIT();
 
@@ -533,7 +520,7 @@ int hdd_wlan_get_frag_threshold(hdd_adapter_t *pAdapter, union iwreq_data *wrqu)
     wrqu->frag.value = threshold;
 
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                               ("Frag-Threshold=%ld!!"), wrqu->frag.value);
+                               ("Frag-Threshold=%d!!"), wrqu->frag.value);
 
     EXIT();
 
@@ -2197,7 +2184,7 @@ static int iw_get_range(struct net_device *dev, struct iw_request_info *info,
                   WNI_CFG_DOT11_MODE, &active_phy_mode) == eHAL_STATUS_SUCCESS)
    {
       VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-                "active_phy_mode = %ld", active_phy_mode);
+                "active_phy_mode = %d", active_phy_mode);
 
       if (active_phy_mode == WNI_CFG_DOT11_MODE_11A || active_phy_mode == WNI_CFG_DOT11_MODE_11G)
       {
@@ -2707,7 +2694,7 @@ static int iw_get_linkspeed(struct net_device *dev,
 
    wrqu->data.length = len;
    // return the linkspeed in the format required by the WiFi Framework
-   rc = snprintf(pLinkSpeed, len, "%lu", link_speed);
+   rc = snprintf(pLinkSpeed, len, "%u", link_speed);
    if ((rc < 0) || (rc >= len))
    {
        // encoding or length error?
@@ -3153,7 +3140,7 @@ static int iw_set_priv(struct net_device *dev,
             VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
                        "%s: SME Change Country code fail", __func__);
             kfree(cmd);
-            return -EINVAL;
+            return -EIO;
         }
     }
     else if( strncasecmp(cmd, "rssi", 4) == 0 )
@@ -3278,7 +3265,7 @@ static int iw_set_priv(struct net_device *dev,
                return -EINVAL;
         }
 
-        if (4 != sscanf(ptr,"%hhu %hhu %hhu %lu",
+        if (4 != sscanf(ptr,"%hhu %hhu %hhu %u",
                         &(tTxPerTrackingParam.ucTxPerTrackingEnable),
                         &(tTxPerTrackingParam.ucTxPerTrackingPeriod),
                         &(tTxPerTrackingParam.ucTxPerTrackingRatio),
@@ -3838,7 +3825,7 @@ static int iw_set_retry(struct net_device *dev, struct iw_request_info *info,
    if(wrqu->retry.value < WNI_CFG_LONG_RETRY_LIMIT_STAMIN ||
        wrqu->retry.value > WNI_CFG_LONG_RETRY_LIMIT_STAMAX) {
 
-      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, ("Invalid Retry-Limit=%ld!!"),wrqu->retry.value);
+      VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR, ("Invalid Retry-Limit=%d!!"),wrqu->retry.value);
 
       return -EINVAL;
    }
@@ -3869,7 +3856,7 @@ static int iw_set_retry(struct net_device *dev, struct iw_request_info *info,
        return -EOPNOTSUPP;
    }
 
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("Set Retry-Limit=%ld!!"),wrqu->retry.value);
+   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("Set Retry-Limit=%d!!"),wrqu->retry.value);
 
    EXIT();
 
@@ -3923,7 +3910,7 @@ static int iw_get_retry(struct net_device *dev, struct iw_request_info *info,
       return -EOPNOTSUPP;
    }
 
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("Retry-Limit=%ld!!"),retry);
+   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("Retry-Limit=%d!!"),retry);
 
    EXIT();
 
@@ -4037,7 +4024,7 @@ static int iw_setint_getnone(struct net_device *dev, struct iw_request_info *inf
                 sme_GetConfigParam(hHal,&smeConfig);
                 smeConfig.csrConfig.Is11dSupportEnabled = (v_BOOL_t)set_value;
 
-                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("11D state=%ld!!"),smeConfig.csrConfig.Is11dSupportEnabled);
+                VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("11D state=%d!!"),smeConfig.csrConfig.Is11dSupportEnabled);
 
                 sme_UpdateConfig(hHal,&smeConfig);
             }
@@ -4362,28 +4349,27 @@ static int iw_setint_getnone(struct net_device *dev, struct iw_request_info *inf
                hddLog(VOS_TRACE_LEVEL_ERROR,"%s: wiphy is NULL ", __func__);
                break;
            }
-
            init_completion(&hddCtxt->wiphy_channel_update_event);
+
            hddCtxt->nEnableStrictRegulatoryForFCC = set_value;
+
            status = regulatory_hint(wiphy, "00");
            if(status < 0)
            {
-               hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Failure in setting regulatory rule ",
-                      __func__);
+               hddLog(VOS_TRACE_LEVEL_ERROR,"%s: Failure in setting regulatory rule ", __func__);
                break;
            }
 
            /* Wait for completion */
            lrc = wait_for_completion_interruptible_timeout(&hddCtxt->wiphy_channel_update_event,
-	                                       msecs_to_jiffies(WLAN_WAIT_TIME_CHANNEL_UPDATE));
-	   if (lrc <= 0)
+                                       msecs_to_jiffies(WLAN_WAIT_TIME_CHANNEL_UPDATE));
+           if (lrc <= 0)
            {
                hddLog(VOS_TRACE_LEVEL_ERROR,"%s: SME %s while setting strict FCC regulatory rule ",
                       __func__, (0 == lrc) ? "Timeout" : "Interrupt");
                return (0 == lrc) ? -ETIMEDOUT : -EINTR;
            }
-           hddLog(VOS_TRACE_LEVEL_INFO,"%s: SUCCESS in setting strict FCC regulatory rule",
-                  __func__);
+           hddLog(VOS_TRACE_LEVEL_INFO,"%s: SUCCESS in setting strict FCC regulatory rule", __func__);
 
            break;
         }
@@ -4528,7 +4514,7 @@ static int iw_setnone_getint(struct net_device *dev, struct iw_request_info *inf
 
            *value = smeConfig.csrConfig.Is11dSupportEnabled;
 
-            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("11D state=%ld!!"),*value);
+            VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("11D state=%d!!"),*value);
 
            break;
         }
@@ -4540,7 +4526,7 @@ static int iw_setnone_getint(struct net_device *dev, struct iw_request_info *inf
         case WE_PMC_STATE:
         {
              *value = pmcGetPmcState(hHal);
-             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("PMC state=%ld!!"),*value);
+             VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO, ("PMC state=%d!!"),*value);
              break;
         }
         case WE_GET_WLAN_DBG:
@@ -5096,36 +5082,6 @@ static int iw_get_char_setnone(struct net_device *dev, struct iw_request_info *i
            break;
        }
 #endif
-#ifdef FEATURE_CESIUM_PROPRIETARY
-        case WE_GET_IBSS_STA_INFO:
-        {
-            hdd_station_ctx_t *pHddStaCtx =
-                WLAN_HDD_GET_STATION_CTX_PTR(pAdapter);
-            int idx = 0;
-            int length = 0;
-
-            for (idx = 0; idx < HDD_MAX_NUM_IBSS_STA; idx++)
-            {
-               if (0 != pHddStaCtx->conn_info.staId[ idx ])
-               {
-                   length += scnprintf
-                             (
-                             (extra + length), WE_MAX_STR_LEN - length,
-                             "%d .%02x:%02x:%02x:%02x:%02x:%02x\n",
-                             pHddStaCtx->conn_info.staId[ idx ],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[0],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[1],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[2],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[3],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[4],
-                             pHddStaCtx->conn_info.peerMacAddress[idx].bytes[5]
-                             );
-               }
-            }
-            wrqu->data.length = strlen(extra)+1;
-            break;
-        }
-#endif
         default:
         {
             hddLog(LOGE, "%s: Invalid IOCTL command %d", __func__, sub_cmd );
@@ -5324,7 +5280,7 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
     for ( i=0; i< NUM_TX_QUEUES; i++)
     {
         spin_lock_bh(&pAdapter->wmm_tx_queue[i].lock);
-        hddLog(LOGE, "HDD WMM TxQueue Info For AC: %d Count: %d PrevAdress:0x%x, NextAddress:0x%x",
+        hddLog(LOGE, "HDD WMM TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
                i, pAdapter->wmm_tx_queue[i].count,
                pAdapter->wmm_tx_queue[i].anchor.prev, pAdapter->wmm_tx_queue[i].anchor.next);
         spin_unlock_bh(&pAdapter->wmm_tx_queue[i].lock);
@@ -5338,7 +5294,7 @@ void hdd_wmm_tx_snapshot(hdd_adapter_t *pAdapter)
              for ( j=0; j< NUM_TX_QUEUES; j++)
              {
                 spin_lock_bh(&pAdapter->aStaInfo[i].wmm_tx_queue[j].lock);
-                hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d PrevAdress:0x%x, NextAddress:0x%x",
+                hddLog(LOGE, "HDD TxQueue Info For AC: %d Count: %d PrevAdress:%p, NextAddress:%p",
                        j, pAdapter->aStaInfo[i].wmm_tx_queue[j].count,
                        pAdapter->aStaInfo[i].wmm_tx_queue[j].anchor.prev,
                        pAdapter->aStaInfo[i].wmm_tx_queue[j].anchor.next);
@@ -5622,10 +5578,6 @@ static int iw_add_tspec(struct net_device *dev, struct iw_request_info *info,
              "%s:TS_INFO PSB %d UP %d !!!", __func__,
              tSpec.ts_info.psb, tSpec.ts_info.up);
 
-   VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO_HIGH,
-             "%s:TS_INFO PSB %d UP %d !!!", __func__,
-             tSpec.ts_info.psb, tSpec.ts_info.up);
-
    tSpec.nominal_msdu_size = params[HDD_WLAN_WMM_PARAM_NOMINAL_MSDU_SIZE];
    tSpec.maximum_msdu_size = params[HDD_WLAN_WMM_PARAM_MAXIMUM_MSDU_SIZE];
    tSpec.min_data_rate = params[HDD_WLAN_WMM_PARAM_MINIMUM_DATA_RATE];
@@ -5832,13 +5784,13 @@ static int iw_qcom_set_wapi_assoc_info(struct net_device *dev, struct iw_request
     hddLog(LOG1, "%s: INPUT DATA:\nElement ID:0x%02x Length:0x%02x Version:0x%04x",__func__,pWapiAssocInfo->elementID,pWapiAssocInfo->length,pWapiAssocInfo->version);
     hddLog(LOG1,"%s: akm Suite Cnt:0x%04x",__func__,pWapiAssocInfo->akmSuiteCount);
     for(i =0 ; i < 16 ; i++)
-        hddLog(LOG1,"akm suite[%02d]:0x%08lx",i,pWapiAssocInfo->akmSuite[i]);
+        hddLog(LOG1,"akm suite[%02d]:0x%08x",i,pWapiAssocInfo->akmSuite[i]);
 
     hddLog(LOG1,"%s: Unicast Suite Cnt:0x%04x",__func__,pWapiAssocInfo->unicastSuiteCount);
     for(i =0 ; i < 16 ; i++)
-        hddLog(LOG1, "Unicast suite[%02d]:0x%08lx",i,pWapiAssocInfo->unicastSuite[i]);
+        hddLog(LOG1, "Unicast suite[%02d]:0x%08x",i,pWapiAssocInfo->unicastSuite[i]);
 
-    hddLog(LOG1,"%s: Multicast suite:0x%08lx Wapi capa:0x%04x",__func__,pWapiAssocInfo->multicastSuite,pWapiAssocInfo->wapiCability);
+    hddLog(LOG1,"%s: Multicast suite:0x%08x Wapi capa:0x%04x",__func__,pWapiAssocInfo->multicastSuite,pWapiAssocInfo->wapiCability);
     hddLog(LOG1, "%s: BKID Cnt:0x%04x",__func__,pWapiAssocInfo->bkidCount);
     for(i = 0 ; i < 16 ; i++) {
         hddLog(LOG1, "BKID List[%02d].bkid:0x",i);
@@ -5991,8 +5943,8 @@ static int iw_qcom_set_wapi_bkid(struct net_device *dev, struct iw_request_info 
     hddLog(LOG1, "%s: Received length %d", __func__, wrqu->data.length);
     hddLog(LOG1, "%s: Received data %s", __func__, (char*)extra);
 
-    hddLog(LOG1,"%s: INPUT DATA:\n BKID Length:0x%08lx\n", __func__,pBkid->length);
-    hddLog(LOG1,"%s: BKID Cnt:0x%04lx",pBkid->BKIDCount);
+    hddLog(LOG1,"%s: INPUT DATA:\n BKID Length:0x%08x", __func__,pBkid->length);
+    hddLog(LOG1,"%s: BKID Cnt:0x%04x", __func__, pBkid->BKIDCount);
 
     hddLog(LOG1,"BKID KEY LIST[0]:0x");
 
@@ -6313,8 +6265,9 @@ static int iw_set_keepalive_params(struct net_device *dev, struct iw_request_inf
     }
 
     /* Debug display of request components. */
-    hddLog(VOS_TRACE_LEVEL_INFO, "%s: Set Keep Alive Request : TimePeriod %d size %d",
-           __func__,pRequest->timePeriod, sizeof(tKeepAliveRequest));
+    hddLog(VOS_TRACE_LEVEL_INFO,
+           "%s: Set Keep Alive Request : TimePeriod %d size %zu",
+           __func__, pRequest->timePeriod, sizeof(tKeepAliveRequest));
 
       switch (pRequest->packetType)
       {
@@ -7113,7 +7066,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
            pnoRequest.aNetworks[i].ssId.length);
     ptr += pnoRequest.aNetworks[i].ssId.length;
 
-    ucParams = sscanf(ptr,"%lu %lu %hhu %n",
+    ucParams = sscanf(ptr,"%u %u %hhu %n",
                       &(pnoRequest.aNetworks[i].authentication),
                       &(pnoRequest.aNetworks[i].encryption),
                       &(pnoRequest.aNetworks[i].ucChannelCount),
@@ -7127,7 +7080,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
     }
 
     VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_INFO,
-              "PNO len %d ssid 0x%08lx%08lx%08lx%08lx%08lx%08lx%08lx%08lx"
+              "PNO len %d ssid 0x%08x%08x%08x%08x%08x%08x%08x%08x"
               "auth %d encry %d channel count %d offset %d",
               pnoRequest.aNetworks[i].ssId.length,
               *((v_U32_t *) &pnoRequest.aNetworks[i].ssId.ssId[0]),
@@ -7169,7 +7122,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
       }
     }
 
-    if (1 != sscanf(ptr,"%lu %n",
+    if (1 != sscanf(ptr,"%u %n",
                     &(pnoRequest.aNetworks[i].bcastNetwType),
                     &nOffset))
     {
@@ -7226,7 +7179,7 @@ VOS_STATUS iw_set_pno(struct net_device *dev, struct iw_request_info *info,
 
      for ( i = 0; i < pnoRequest.scanTimers.ucScanTimersCount; i++ )
      {
-        ucParams = sscanf(ptr,"%lu %lu %n",
+        ucParams = sscanf(ptr,"%u %u %n",
            &(pnoRequest.scanTimers.aTimerValues[i].uTimerValue),
            &( pnoRequest.scanTimers.aTimerValues[i].uTimerRepeat),
            &nOffset);
@@ -7404,7 +7357,8 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
              return -EINVAL;
         }
         wlan_hdd_cfg80211_update_band(pHddCtx->wiphy, (eCsrBand)band);
-        hdd_abort_mac_scan(pHddCtx, eCSR_SCAN_ABORT_DUE_TO_BAND_CHANGE);
+        hdd_abort_mac_scan(pHddCtx, pAdapter->sessionId,
+                           eCSR_SCAN_ABORT_DUE_TO_BAND_CHANGE);
         sme_FilterScanResults(hHal, pAdapter->sessionId);
 
         if (band != eCSR_BAND_ALL &&
@@ -7419,7 +7373,8 @@ int hdd_setBand(struct net_device *dev, u8 ui_band)
                         * then change the band*/
 
              hddLog(VOS_TRACE_LEVEL_INFO,
-                     "%s STA connected in band %u, Changing band to %u, Issuing Disconnect",
+                     "%s STA connected in band %u, Changing band to %u, Issuing Disconnect."
+                     " Set HDD connState to eConnectionState_NotConnected",
                         __func__, csrGetCurrentBand(hHal), band);
 
              pHddStaCtx->conn_info.connState = eConnectionState_NotConnected;
@@ -7586,7 +7541,7 @@ VOS_STATUS iw_set_power_params(struct net_device *dev, struct iw_request_info *i
 
     ptr += nOffset;
 
-    if (1 != sscanf(ptr,"%lu %n", &(uValue), &nOffset))
+    if (1 != sscanf(ptr,"%u %n", &(uValue), &nOffset))
     {
         VOS_TRACE(VOS_MODULE_ID_HDD, VOS_TRACE_LEVEL_ERROR,
                   "Invalid input parameter value %s",ptr);
