@@ -162,6 +162,12 @@ struct cfs_bandwidth { };
 
 struct cfs_rq {
 	struct load_weight load;
+	/*
+	 * The difference between nr_running and h_nr_running is:
+	 * nr_running:   present how many entity would take part in the sharing
+	 *               the cpu power of that cfs_rq
+	 * h_nr_running: present how many tasks in current cfs runqueue
+	 */
 	unsigned long nr_running, h_nr_running;
 
 	u64 exec_clock;
@@ -419,6 +425,7 @@ static inline struct sched_domain *highest_flag_domain(int cpu, int flag)
 }
 
 DECLARE_PER_CPU(struct sched_domain *, sd_llc);
+DECLARE_PER_CPU(int, sd_llc_size);
 DECLARE_PER_CPU(int, sd_llc_id);
 
 #endif 
