@@ -53,6 +53,11 @@ config INTERNAL_CHARGING_SUPPORT
         boolean "INTERNAL CHARGING SUPPORT"
         default n:
 
+config LCD_NOTIFY
+	bool "LCD notify kernel module"
+	---help---
+	Allows LCD on/off event notification to be sent throughout the kernel
+
 config MHL_MONITOR_WORKAROUND
 	depends on INTERNAL_CHARGING_SUPPORT
 	boolean 'Monitor MHL function workaround'
