@@ -19,9 +19,8 @@
 /************************************************************************/
 /*                                                                      */
 /*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : exfat_cache.h                                             */
-/*  PURPOSE : Header File for exFAT Cache Manager                       */
-/*            (FAT Cache & Buffer Cache)                                */
+/*  FILE    : exfat_part.h                                              */
+/*  PURPOSE : Header File for exFAT Partition Manager                   */
 /*                                                                      */
 /*----------------------------------------------------------------------*/
 /*  NOTES                                                               */
@@ -29,15 +28,16 @@
 /*----------------------------------------------------------------------*/
 /*  REVISION HISTORY (Ver 0.9)                                          */
 /*                                                                      */
-/*  - 2010.11.15 [Sung-Kwan Kim] : first writing                        */
+/*  - 2010.11.15 [Joosun Hahn] : first writing                          */
 /*                                                                      */
 /************************************************************************/
 
-#ifndef _EXFAT_CACHE_H
-#define _EXFAT_CACHE_H
+#ifndef _EXFAT_PART_H
+#define _EXFAT_PART_H
 
 #include "exfat_config.h"
 #include "exfat_global.h"
+#include "exfat_api.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,48 +47,46 @@ extern "C" {
 	/*  Constant & Macro Definitions                                        */
 	/*----------------------------------------------------------------------*/
 
-#define LOCKBIT                 0x01
-#define DIRTYBIT                0x02
+#define MBR_SIGNATURE           0xAA55
 
 	/*----------------------------------------------------------------------*/
 	/*  Type Definitions                                                    */
 	/*----------------------------------------------------------------------*/
 
-	typedef struct __BUF_CACHE_T {
-		struct __BUF_CACHE_T *next;
-		struct __BUF_CACHE_T *prev;
-		struct __BUF_CACHE_T *hash_next;
-		struct __BUF_CACHE_T *hash_prev;
-		INT32                drv;
-		UINT32               sec;
-		UINT32               flag;
-		struct buffer_head   *buf_bh;
-	} BUF_CACHE_T;
+	/* MS-DOS FAT master boot record (512 bytes) */
+	typedef struct {
+		UINT8       boot_code[446];
+		UINT8       partition[64];
+		UINT8       signature[2];
+	} MBR_SECTOR_T;
+
+	/* MS-DOS FAT partition table (64 bytes) */
+	typedef struct {
+		UINT8       def_boot;
+		UINT8       bgn_chs[3];
+		UINT8       sys_type;
+		UINT8       end_chs[3];
+		UINT8       start_sector[4];
+		UINT8       num_sectors[4];
+	} PART_ENTRY_T;
 
 	/*----------------------------------------------------------------------*/
 	/*  External Function Declarations                                      */
 	/*----------------------------------------------------------------------*/
 
-	INT32  buf_init(struct super_block *sb);
-	INT32  buf_shutdown(struct super_block *sb);
-	INT32  FAT_read(struct super_block *sb, UINT32 loc, UINT32 *content);
-	INT32  FAT_write(struct super_block *sb, UINT32 loc, UINT32 content);
-	UINT8 *FAT_getblk(struct super_block *sb, UINT32 sec);
-	void   FAT_modify(struct super_block *sb, UINT32 sec);
-	void   FAT_release_all(struct super_block *sb);
-	void   FAT_sync(struct super_block *sb);
-	UINT8 *buf_getblk(struct super_block *sb, UINT32 sec);
-	void   buf_modify(struct super_block *sb, UINT32 sec);
-	void   buf_lock(struct super_block *sb, UINT32 sec);
-	void   buf_unlock(struct super_block *sb, UINT32 sec);
-	void   buf_release(struct super_block *sb, UINT32 sec);
-	void   buf_release_all(struct super_block *sb);
-	void   buf_sync(struct super_block *sb);
+	/* volume management functions */
+	INT32 ffsSetPartition(INT32 dev, INT32 num_vol, PART_INFO_T *vol_spec);
+	INT32 ffsGetPartition(INT32 dev, INT32 *num_vol, PART_INFO_T *vol_spec);
+	INT32 ffsGetDevInfo(INT32 dev, DEV_INFO_T *info);
+
+	/*----------------------------------------------------------------------*/
+	/*  External Function Declarations (NOT TO UPPER LAYER)                 */
+	/*----------------------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus  */
+#endif /* __cplusplus */
 
-#endif /* _EXFAT_CACHE_H */
+#endif /* _EXFAT_PART_H */
 
-/* end of exfat_cache.h */
+/* end of exfat_part.h */
