@@ -1,3 +1,4 @@
+/*
  *	linux/kernel/softirq.c
  *
  *	Copyright (C) 1992 Linus Torvalds
