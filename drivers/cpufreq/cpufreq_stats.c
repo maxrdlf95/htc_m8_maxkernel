@@ -30,7 +30,7 @@ static struct freq_attr _attr_##_name = {\
 	.show = _show,\
 };
 
-#define CPU_FREQ_LEVEL_NUMBER 34
+#define CPU_FREQ_LEVEL_NUMBER	34
 
 static cputime64_t cpu0_time_in_state[CPU_FREQ_LEVEL_NUMBER] = {0};
 static unsigned int cpu0_total_trans = 0;
@@ -99,7 +99,6 @@ static int cpufreq_stats_update(unsigned int cpu)
 			cpu3_time_in_state[stat->last_index] +
 			(cur_time - stat->last_time);
 #endif
-
 	stat->last_time = cur_time;
 	spin_unlock(&cpufreq_stats_lock);
 	return 0;
@@ -113,7 +112,7 @@ static ssize_t show_total_trans(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%d\n",
 			per_cpu(cpufreq_stats_table, stat->cpu)->total_trans);
 }
- 
+
 static ssize_t show_overall_total_trans(struct kobject *kobj,
 						struct attribute *attr, char *buf)
 {
@@ -143,7 +142,7 @@ static ssize_t show_time_in_state(struct cpufreq_policy *policy, char *buf)
 	}
 	return len;
 }
- 
+
 static ssize_t show_overall_time_in_state(struct kobject *kobj,
 						struct attribute *attr, char *buf)
 {
@@ -176,9 +175,9 @@ static ssize_t show_overall_time_in_state(struct kobject *kobj,
 		len += sprintf(buf + len, "%u %llu\n", stat->freq_table[i], cputime);
 	}
 #endif
-
 	return len;
 }
+
 
 #ifdef CONFIG_CPU_FREQ_STAT_DETAILS
 static ssize_t show_trans_table(struct cpufreq_policy *policy, char *buf)
@@ -229,7 +228,7 @@ CPUFREQ_STATDEVICE_ATTR(trans_table, 0444, show_trans_table);
 
 CPUFREQ_STATDEVICE_ATTR(total_trans, 0444, show_total_trans);
 CPUFREQ_STATDEVICE_ATTR(time_in_state, 0444, show_time_in_state);
- 
+
 typedef ssize_t (*show)(struct cpufreq_policy *, char *);
 CPUFREQ_STATDEVICE_ATTR(overall_time_in_state, 0444, (show)show_overall_time_in_state);
 CPUFREQ_STATDEVICE_ATTR(overall_total_trans, 0444, (show)show_overall_total_trans);
@@ -253,7 +252,7 @@ static struct attribute_group stats_attr_group = {
 	.attrs = default_attrs,
 	.name = "stats"
 };
- 
+
 static struct attribute_group overall_stats_attr_group = {
         .attrs = overall_attrs,
         .name = "overall_stats"
@@ -379,9 +378,8 @@ static int cpufreq_stat_notifier_policy(struct notifier_block *nb,
 	if (!table)
 		return 0;
 	ret = cpufreq_stats_create_table(policy, table);
-	if (ret)
-		return ret;
-	return 0;
+
+	return (ret == -EBUSY)? 0 : ret;
 }
 
 static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
@@ -397,7 +395,6 @@ static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
 	cpufreq_stats_update(freq->cpu);
 
 	spin_lock(&cpufreq_stats_lock);
-
 	stat = per_cpu(cpufreq_stats_table, freq->cpu);
 	if (!stat) {
 		spin_unlock(&cpufreq_stats_lock);
@@ -432,7 +429,6 @@ static int cpufreq_stat_notifier_trans(struct notifier_block *nb,
 	else if (freq->cpu == 3)
 		cpu3_total_trans++;
 #endif
-
 	spin_unlock(&cpufreq_stats_lock);
 	return 0;
 }
