@@ -15,67 +15,73 @@
 #endif
 
 #include "power.h"
+#ifdef CONFIG_HTC_POWER_DEBUG
+#include <linux/pm_wakeup.h>
+#endif
 
 static suspend_state_t autosleep_state;
 static struct workqueue_struct *autosleep_wq;
-/*
- * Note: it is only safe to mutex_lock(&autosleep_lock) if a wakeup_source
- * is active, otherwise a deadlock with try_to_suspend() is possible.
- * Alternatively mutex_lock_interruptible() can be used.  This will then fail
- * if an auto_sleep cycle tries to freeze processes.
- */
 static DEFINE_MUTEX(autosleep_lock);
 static struct wakeup_source *autosleep_ws;
 
 static void try_to_suspend(struct work_struct *work)
 {
 	unsigned int initial_count, final_count;
-	int error = 0;
 
-	if (!pm_get_wakeup_count(&initial_count, true))
+	if (!pm_get_wakeup_count(&initial_count, true)) {
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[P] suspend abort, wakeup event nonzero\n");
+		htc_print_active_wakeup_sources();
+#endif
 		goto out;
+	}
 
 	mutex_lock(&autosleep_lock);
 
 	if (!pm_save_wakeup_count(initial_count)) {
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[P] suspend abort, events not matched or being processed\n");
+#endif
 		mutex_unlock(&autosleep_lock);
 		goto out;
 	}
 
 	if (autosleep_state == PM_SUSPEND_ON) {
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[P] suspend abort, autosleep_state is ON\n");
+#endif
 		mutex_unlock(&autosleep_lock);
 		return;
 	}
 	if (autosleep_state >= PM_SUSPEND_MAX)
 		hibernate();
-	else
-		error = pm_suspend(autosleep_state);
+	else {
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[R] suspend start\n");
+#endif
+		pm_suspend(autosleep_state);
+	}
 
 	mutex_unlock(&autosleep_lock);
 
-#ifdef CONFIG_SEC_PM
-	if (error)
-		goto out;
+	if (!pm_get_wakeup_count(&final_count, false)) {
+
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[R] resume end\n");
 #endif
-
-	if (!pm_get_wakeup_count(&final_count, false))
 		goto out;
-
-	/*
-	 * If the wakeup occured for an unknown reason, wait to prevent the
-	 * system from trying to suspend and waking up in a tight loop.
-	 */
-	if (final_count == initial_count)
-		schedule_timeout_uninterruptible(HZ / 2);
-
- out:
-#ifdef CONFIG_SEC_PM
-	if (error) {
-		pr_info("PM: suspend returned(%d)\n", error);
+	}
+	if (final_count == initial_count) {
+#ifdef CONFIG_HTC_POWER_DEBUG
+		pr_info("[P] wakeup occured for an unknown reason, wait HZ/2\n");
+#endif
 		schedule_timeout_uninterruptible(HZ / 2);
 	}
+#ifdef CONFIG_HTC_POWER_DEBUG
+	pr_info("[R] resume end\n");
 #endif
 
+ out:
 	queue_up_suspend_work();
 }
 
@@ -118,20 +124,16 @@ int pm_autosleep_set_state(suspend_state_t state)
 
 	__pm_relax(autosleep_ws);
 
-#ifdef CONFIG_SEC_PM_DEBUG
-	wakeup_sources_stats_active();
-#endif
-
 	if (state > PM_SUSPEND_ON) {
 		pm_wakep_autosleep_enabled(true);
 		queue_up_suspend_work();
 #ifdef CONFIG_POWERSUSPEND
-		set_power_suspend_state_autosleep_hook(POWER_SUSPEND_ACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (sleep)
+		set_power_suspend_state_hook(POWER_SUSPEND_ACTIVE); // Yank555.lu : add hook to handle powersuspend tasks
 #endif
 	} else {
 		pm_wakep_autosleep_enabled(false);
 #ifdef CONFIG_POWERSUSPEND
-		set_power_suspend_state_autosleep_hook(POWER_SUSPEND_INACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (wakeup)
+		set_power_suspend_state_hook(POWER_SUSPEND_INACTIVE); // Yank555.lu : add hook to handle powersuspend tasks
 #endif
 	}
 
@@ -139,8 +141,54 @@ int pm_autosleep_set_state(suspend_state_t state)
 	return 0;
 }
 
+
+static int wait_for_fb_status= 1;
+static ssize_t wait_for_fb_status_show(struct kobject *kobj,
+				       struct kobj_attribute *attr, char *buf)
+{
+	int ret = 0;
+
+	if (wait_for_fb_status == 1)
+		ret = sprintf(buf, "on\n");
+	else
+		ret = sprintf(buf, "off\n");
+
+	return ret;
+}
+
+static ssize_t wait_for_fb_status_store(struct kobject *kobj, struct kobj_attribute *attr,
+                const char *buf, size_t n)
+{
+	int val;
+
+	if (sscanf(buf, "%d", &val) == 1) {
+		wait_for_fb_status = !!val;
+		sysfs_notify(kobj, NULL, "wait_for_fb_status");
+		return n;
+	}
+
+	return -EINVAL;
+}
+power_attr(wait_for_fb_status);
+
+static struct attribute *g[] = {
+	&wait_for_fb_status_attr.attr,
+	NULL,
+};
+
+static struct attribute_group attr_group = {
+	.attrs = g,
+};
+
 int __init pm_autosleep_init(void)
 {
+	int ret;
+
+	ret = sysfs_create_group(power_kobj, &attr_group);
+	if (ret) {
+		pr_err("pm_autosleep_init: sysfs_create_group failed\n");
+	}
+
 	autosleep_ws = wakeup_source_register("autosleep");
 	if (!autosleep_ws)
 		return -ENOMEM;
