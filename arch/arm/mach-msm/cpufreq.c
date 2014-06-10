@@ -32,7 +32,6 @@
 #include <linux/platform_device.h>
 #include <trace/events/power.h>
 #include <mach/socinfo.h>
-#include <mach/cpufreq.h>
 
 #ifdef CONFIG_HTC_DEBUG_FOOTPRINT
 #include <mach/htc_footprint.h>
