@@ -25,7 +25,7 @@
 const struct file_operations generic_ro_fops = {
 	.llseek		= generic_file_llseek,
 	.read		= do_sync_read,
-	.read_iter	= generic_file_read_iter,
+	.aio_read	= generic_file_aio_read,
 	.mmap		= generic_file_readonly_mmap,
 	.splice_read	= generic_file_splice_read,
 };
@@ -267,79 +267,63 @@ static void wait_on_retry_sync_kiocb(struct kiocb *iocb)
 	__set_current_state(TASK_RUNNING);
 }
 
-#define WRITE_THRESHOLD	30 * 1024 * 1024
-#define READ_THRESHOLD	50 * 1024 * 1024
+static struct fs_dbg_threshold dbg_threshold[] = {
+	{ 52428800, "read"}, 
+	{ 31457280, "write"}, 
+	{ 104857600, "erase"}, 
+};
+static void check_dbg_threshold(struct task_io_accounting *acc,
+	struct fs_dbg_threshold *thresh, int type)
+{
+	if (acc->acc_bytes[type] > thresh->threshold) {
+		pr_info("FS Statistics: %s(pid %d, parent %s(%d)) %s %llu MB in %u ms\n",
+				current->comm, current->pid,
+				current->parent->comm, current->parent->pid,
+				thresh->type,
+				acc->acc_bytes[type] / 1048576,
+				jiffies_to_msecs(jiffies - acc->last_jiffies[type]));
+		acc->acc_bytes[type] = 0;
+		acc->last_jiffies[type] = 0;
+	}
+}
+
 extern unsigned int get_tamper_sf(void);
-static void print_io_dump(int rw, size_t bytes)
+void fs_debug_dump(unsigned int type, size_t bytes)
 {
 	unsigned long last_jiffies;
-	int reset = 0;
 
 	if (get_tamper_sf() == 1)
 		return;
-
+	if (type > FS_DBG_TYPE_ERASE)
+		return;
 	if (!strcmp(current->comm, "sdcard"))
 		return;
 
-	last_jiffies = current->ioac.last_jiffies;
+	last_jiffies = current->ioac.last_jiffies[type];
 	
-	if ((current->ioac.last_jiffies == 0) ||
-		time_after(jiffies, last_jiffies + 5 * HZ)) {
-		current->ioac.last_jiffies = jiffies;
-		current->ioac.acc_write_bytes = (rw == WRITE) ? bytes : 0;
-		current->ioac.acc_read_bytes = (rw == READ) ? bytes : 0;
+	if ((last_jiffies == 0) || time_after(jiffies, last_jiffies + 5 * HZ)) {
+		current->ioac.acc_bytes[type] = bytes;
+		current->ioac.last_jiffies[type] = jiffies;
+		if (type == FS_DBG_TYPE_ERASE)
+			check_dbg_threshold(&current->ioac, &dbg_threshold[type], type);
 		return;
 	}
-	if (rw == WRITE)
-		current->ioac.acc_write_bytes += bytes;
-	else
-		current->ioac.acc_read_bytes += bytes;
-	if (time_after(jiffies, last_jiffies + HZ)) {
-		if (current->ioac.acc_write_bytes > WRITE_THRESHOLD) {
-			pr_info("FS Statistics: %s(pid %d) write %llu bytes in %u ms\n",
-				current->comm, current->pid,
-				current->ioac.acc_write_bytes,
-				jiffies_to_msecs(jiffies - last_jiffies));
-			reset = 1;
-		}
-		if (current->ioac.acc_read_bytes > READ_THRESHOLD) {
-			pr_info("FS Statistics: %s(pid %d) read %llu bytes in %u ms\n",
-				current->comm, current->pid,
-				current->ioac.acc_read_bytes,
-				jiffies_to_msecs(jiffies - last_jiffies));
-			reset = 1;
-		}
-		if (reset) {
-			current->ioac.last_jiffies = 0;
-			current->ioac.acc_write_bytes = 0;
-			current->ioac.acc_read_bytes = 0;
-		}
+	current->ioac.acc_bytes[type] += bytes;
+
+	
+	if (type == FS_DBG_TYPE_ERASE) {
+		check_dbg_threshold(&current->ioac, &dbg_threshold[type], type);
+		return;
 	}
+
+	
+	if (time_before(jiffies, last_jiffies + HZ))
+		return;
+
+	
+	check_dbg_threshold(&current->ioac, &dbg_threshold[type], type);
 
 	return;
-}
-
-ssize_t do_aio_read(struct kiocb *kiocb, const struct iovec *iov,
-		    unsigned long nr_segs, loff_t pos)
-{
-	struct file *file = kiocb->ki_filp;
-
-	if (file->f_op->read_iter) {
-		size_t count;
-		struct iov_iter iter;
-		int ret;
-
-		count = 0;
-		ret = generic_segment_checks(iov, &nr_segs, &count,
-					     VERIFY_WRITE);
-		if (ret)
-			return ret;
-
-		iov_iter_init(&iter, iov, nr_segs, count, 0);
-		return file->f_op->read_iter(kiocb, &iter, pos);
-	}
-
-	return file->f_op->aio_read(kiocb, iov, nr_segs, pos);
 }
 
 ssize_t do_sync_read(struct file *filp, char __user *buf, size_t len, loff_t *ppos)
@@ -354,7 +338,7 @@ ssize_t do_sync_read(struct file *filp, char __user *buf, size_t len, loff_t *pp
 	kiocb.ki_nbytes = len;
 
 	for (;;) {
-		ret = do_aio_read(&kiocb, &iov, 1, kiocb.ki_pos);
+		ret = filp->f_op->aio_read(&kiocb, &iov, 1, kiocb.ki_pos);
 		if (ret != -EIOCBRETRY)
 			break;
 		wait_on_retry_sync_kiocb(&kiocb);
@@ -375,7 +359,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
-	if (!file_readable(file))
+	if (!file->f_op || (!file->f_op->read && !file->f_op->aio_read))
 		return -EINVAL;
 	if (unlikely(!access_ok(VERIFY_WRITE, buf, count)))
 		return -EFAULT;
@@ -396,35 +380,12 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
 	if (sb && (!strcmp(sb->s_type->name, "ext4")
 		|| !strcmp(sb->s_type->name, "fuse")
 		|| !strcmp(sb->s_type->name, "vfat")))
-		print_io_dump(READ, count);
+		fs_debug_dump(FS_DBG_TYPE_READ, count);
 
 	return ret;
 }
 
 EXPORT_SYMBOL(vfs_read);
-
-ssize_t do_aio_write(struct kiocb *kiocb, const struct iovec *iov,
-		     unsigned long nr_segs, loff_t pos)
-{
-	struct file *file = kiocb->ki_filp;
-
-	if (file->f_op->write_iter) {
-		size_t count;
-		struct iov_iter iter;
-		int ret;
-
-		count = 0;
-		ret = generic_segment_checks(iov, &nr_segs, &count,
-					     VERIFY_READ);
-		if (ret)
-			return ret;
-
-		iov_iter_init(&iter, iov, nr_segs, count, 0);
-		return file->f_op->write_iter(kiocb, &iter, pos);
-	}
-
-	return file->f_op->aio_write(kiocb, iov, nr_segs, pos);
-}
 
 ssize_t do_sync_write(struct file *filp, const char __user *buf, size_t len, loff_t *ppos)
 {
@@ -438,7 +399,7 @@ ssize_t do_sync_write(struct file *filp, const char __user *buf, size_t len, lof
 	kiocb.ki_nbytes = len;
 
 	for (;;) {
-		ret = do_aio_write(&kiocb, &iov, 1, kiocb.ki_pos);
+		ret = filp->f_op->aio_write(&kiocb, &iov, 1, kiocb.ki_pos);
 		if (ret != -EIOCBRETRY)
 			break;
 		wait_on_retry_sync_kiocb(&kiocb);
@@ -459,7 +420,7 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
 
 	if (!(file->f_mode & FMODE_WRITE))
 		return -EBADF;
-	if (!file_writable(file))
+	if (!file->f_op || (!file->f_op->write && !file->f_op->aio_write))
 		return -EINVAL;
 	if (unlikely(!access_ok(VERIFY_READ, buf, count)))
 		return -EFAULT;
@@ -481,7 +442,7 @@ ssize_t vfs_write(struct file *file, const char __user *buf, size_t count, loff_
 	if (sb && (!strcmp(sb->s_type->name, "ext4")
 		|| !strcmp(sb->s_type->name, "fuse")
 		|| !strcmp(sb->s_type->name, "vfat")))
-		print_io_dump(WRITE, count);
+		fs_debug_dump(FS_DBG_TYPE_WRITE, count);
 
 	return ret;
 }
@@ -837,12 +798,10 @@ static ssize_t do_readv_writev(int type, struct file *file,
 	fnv = NULL;
 	if (type == READ) {
 		fn = file->f_op->read;
-		if (file->f_op->aio_read || file->f_op->read_iter)
-			fnv = do_aio_read;
+		fnv = file->f_op->aio_read;
 	} else {
 		fn = (io_fn_t)file->f_op->write;
-		if (file->f_op->aio_write || file->f_op->write_iter)
-			fnv = do_aio_write;
+		fnv = file->f_op->aio_write;
 	}
 
 	if (fnv)
@@ -868,7 +827,7 @@ ssize_t vfs_readv(struct file *file, const struct iovec __user *vec,
 {
 	if (!(file->f_mode & FMODE_READ))
 		return -EBADF;
-	if (!file_readable(file))
+	if (!file->f_op || (!file->f_op->aio_read && !file->f_op->read))
 		return -EINVAL;
 
 	return do_readv_writev(READ, file, vec, vlen, pos);
@@ -881,7 +840,7 @@ ssize_t vfs_writev(struct file *file, const struct iovec __user *vec,
 {
 	if (!(file->f_mode & FMODE_WRITE))
 		return -EBADF;
-	if (!file_writable(file))
+	if (!file->f_op || (!file->f_op->aio_write && !file->f_op->write))
 		return -EINVAL;
 
 	return do_readv_writev(WRITE, file, vec, vlen, pos);
