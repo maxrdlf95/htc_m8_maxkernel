@@ -112,7 +112,6 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		owner = ACCESS_ONCE(lock->owner);
 		if (owner && !mutex_spin_on_owner(lock, owner))
 			break;
-		}
 
 		if (atomic_cmpxchg(&lock->count, 1, 0) == 1) {
 			lock_acquired(&lock->dep_map, ip);
