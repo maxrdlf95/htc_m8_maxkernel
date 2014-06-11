@@ -2554,7 +2554,7 @@ static inline bool owner_running(struct mutex *lock, struct task_struct *owner)
 int mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 {
 	if (!sched_feat(OWNER_SPIN))
-		return 0
+		return 0;
 
 	rcu_read_lock();
 	while (owner_running(lock, owner)) {
