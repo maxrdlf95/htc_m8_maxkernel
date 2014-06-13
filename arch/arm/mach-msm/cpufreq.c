@@ -125,6 +125,10 @@ out:
 	mutex_unlock(&l2bw_lock);
 }
 
+#ifdef CONFIG_TURBO_BOOST
+extern int msm_turbo(int);
+#endif
+
 #ifdef CONFIG_ARCH_MSM8974
 static DEFINE_MUTEX(set_cpufreq_lock);
 #endif
@@ -166,6 +170,9 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq,
 
 #ifdef CONFIG_ARCH_MSM8974
 	mutex_lock(&set_cpufreq_lock);
+#endif
+#ifdef CONFIG_TURBO_BOOST
+	new_freq = msm_turbo(new_freq);
 #endif
 	freqs.old = policy->cur;
 	freqs.new = new_freq;
