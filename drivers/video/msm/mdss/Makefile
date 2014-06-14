@@ -1,3 +1,4 @@
+ccflags-y := -Wno-array-bounds
 mdss-mdp3-objs = mdp3.o mdp3_dma.o mdp3_ctrl.o
 mdss-mdp3-objs += mdp3_ppp.o mdp3_ppp_hwio.o mdp3_ppp_data.o
 obj-$(CONFIG_FB_MSM_MDSS) += mdss-mdp3.o
@@ -47,6 +48,9 @@ obj-$(CONFIG_FB_MSM_QPIC) += mdss-qpic.o
 obj-$(CONFIG_FB_MSM_QPIC_ILI_QVGA_PANEL) += qpic_panel_ili_qvga.o
 
 obj-$(CONFIG_FB_MSM_MDSS) += mdss_fb.o
+ifeq ($(CONFIG_LCD_NOTIFY),y)
+obj-$(CONFIG_FB_MSM_MDSS) += lcd_notify.o
+endif
 
 obj-$(CONFIG_FB_MSM_MDSS_HDMI_MHL_SII9234) += sii9234/
 obj-$(CONFIG_FB_MSM_MDSS_HDMI_MHL_SII8240_SII8558) += sii8240_8558/
