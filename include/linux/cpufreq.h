@@ -50,6 +50,9 @@ static inline void disable_cpufreq(void) { }
 #define CPUFREQ_POLICY_POWERSAVE	(1)
 #define CPUFREQ_POLICY_PERFORMANCE	(2)
 
+/* Minimum frequency cutoff to notify the userspace about cpu utilization
+ * changes */
+#define MIN_CPU_UTIL_NOTIFY   4
 
 struct cpufreq_governor;
 
@@ -80,7 +83,8 @@ struct cpufreq_policy {
 
 	unsigned int		min;    
 	unsigned int		max;    
-	unsigned int		cur;    
+	unsigned int		cur;
+	unsigned int            util;  /* CPU utilization at max frequency */    
 	unsigned int		policy; 
 	struct cpufreq_governor	*governor; 
 
@@ -213,6 +217,8 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver_data);
 
 
 void cpufreq_notify_transition(struct cpufreq_freqs *freqs, unsigned int state);
+void cpufreq_notify_utilization(struct cpufreq_policy *policy,
+		unsigned int load);
 
 #ifdef CONFIG_MSM_CPUFREQ_LIMITER
 extern unsigned int limited_max_freq;
