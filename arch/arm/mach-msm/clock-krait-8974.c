@@ -41,6 +41,9 @@
 
 //elementalx
 unsigned long arg_cpu_oc = 0;
+static int arg_vdd_uv = 0;
+int pvs_number = 0;
+module_param(pvs_number, int, 0755); 
 
 static int __init cpufreq_read_cpu_oc(char *cpu_oc)
 {
@@ -507,7 +510,7 @@ static void get_krait_bin_format_b(struct platform_device *pdev,
 	if (pte_efuse) {
 
 		//elementalx
-
+		pvs_number = *pvs;
 
 		dev_info(&pdev->dev, "PVS bin: %d\n", *pvs);
 	} else {
@@ -820,10 +823,6 @@ static int clock_krait_8974_driver_probe(struct platform_device *pdev)
 			rows = ret;
 		}
 	}
-
-	//elementalx
-	if (arg_cpu_oc)
-		krait_update_freq(freq, uv, ua, rows);
 
 	krait_update_uv(uv, rows, pvs ? 25000 : 0);
 
