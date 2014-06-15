@@ -21,7 +21,10 @@
 #include <linux/regulator/consumer.h>
 #include <linux/of.h>
 #include <linux/cpumask.h>
+
+#ifdef CONFIG_CPU_VOLTAGE_TABLE
 #include <linux/cpufreq.h>
+#endif
 
 #include <asm/cputype.h>
 
@@ -35,40 +38,6 @@
 #ifdef CONFIG_PERFLOCK
 #include <mach/perflock.h>
 #endif
-
-unsigned long arg_cpu_oc = 0;
-static int arg_vdd_uv = 0;
-
-static int __init cpufreq_read_cpu_oc(char *cpu_oc)
-{
-	unsigned long ui_khz;
-	int err;
-
-	err =  strict_strtoul(cpu_oc, 0, &ui_khz);
-	if (err)
-		arg_cpu_oc = 0;
-
-	arg_cpu_oc = ui_khz;
-	printk("elementalx: cpu_oc=%lu\n", arg_cpu_oc);
-	return 0;
-}
-__setup("cpu_oc=", cpufreq_read_cpu_oc);
-
-
-
-static int __init cpufreq_read_vdd_uv(char *vdd_uv)
-{
-	long arg, err;
-
-	err =  strict_strtol(vdd_uv, 0, &arg);
-	if (err)
-		arg_vdd_uv = 0;
-
-	arg_vdd_uv = arg;
-	printk("elementalx: vdd_uv=%d\n", arg_vdd_uv);
-	return 0;
-}
-__setup("vdd_uv=", cpufreq_read_vdd_uv);
 
 DEFINE_FIXED_DIV_CLK(hfpll_src_clk, 1, NULL);
 DEFINE_FIXED_DIV_CLK(acpu_aux_clk, 2, NULL);
@@ -630,61 +599,6 @@ static void krait_update_uv(int *uv, int num, int boost_uv)
 		for (i = 0; i < num; i++)
 			uv[i] += boost_uv;
 	}
-
-
-	switch (arg_vdd_uv) {
-
-	case 1:
-		uv[1] -= 15000;
-		break;
-	case 2:
-		uv[1] -= 30000;
-		break;
-	case 3:
-		uv[1] -= 45000;
-		break;
-	}
-}
-
-static void krait_update_freq(unsigned long *freq, int *uv, int *ua, int num, int speed)
-{
-
-	if (speed == 3 && arg_cpu_oc <= 2457600) {
-		printk("elementalx: uv=%d freq=%lu ua=%d\n", uv[num-1], freq[num-1]/1000, ua[num-1]);
-		return;
-	}
-
-	freq[num-1] = arg_cpu_oc*1000;
-
-	switch (arg_cpu_oc) {
-
-	case 2342400:
-		ua[num-1] = 751;
-		uv[num-1] = min(1200000, uv[num-1] + 15000);
-		break;
-	case 2457600:
-		ua[num-1] = 802;
-		uv[num-1] = min(1200000, uv[num-1] + 35000);
-		break;
-	case 2572800:
-		ua[num-1] = 831;
-		uv[num-1] = min(1200000, uv[num-1] + 50000);
-		break;
-	case 2649600:
-		ua[num-1] = 866;
-		uv[num-1] = min(1200000, uv[num-1] + 65000);
-		break;
-	case 2726400:
-		ua[num-1] = 900;
-		uv[num-1] = min(1200000, uv[num-1] + 80000);
-		break;
-	case 2803200:
-		ua[num-1] = 937;
-		uv[num-1] = min(1200000, uv[num-1] + 95000);
-		break;
-	}
-
-	printk("elementalx: uv=%d freq=%lu ua=%d\n", uv[num-1], freq[num-1]/1000, ua[num-1]);
 }
 
 static char table_name[] = "qcom,speedXX-pvsXX-bin-vXX";
@@ -693,68 +607,72 @@ static unsigned int pvs_config_ver;
 module_param(pvs_config_ver, uint, S_IRUGO);
 
 #ifdef CONFIG_CPU_VOLTAGE_TABLE
-#define CPU_VDD_MAX	1200
-#define CPU_VDD_MIN	600
 
-extern int use_for_scaling(unsigned int freq);
-static unsigned int cnt;
+#define CPU_VDD_MIN	 600
+#define CPU_VDD_MAX	1450
 
-ssize_t show_UV_mV_table(struct cpufreq_policy *policy,
-			 char *buf)
+extern bool is_used_by_scaling(unsigned int freq);
+
+ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 {
 	int i, freq, len = 0;
-	unsigned int cpu = 0;
-	unsigned int num_levels = cpu_clk[cpu]->vdd_class->num_levels;
+	/* use only master core 0 */
+	int num_levels = cpu_clk[0]->vdd_class->num_levels;
+
+	/* sanity checks */
+	if (num_levels < 0)
+		return -EINVAL;
 
 	if (!buf)
 		return -EINVAL;
 
+	/* format UV_mv table */
 	for (i = 0; i < num_levels; i++) {
-		freq = use_for_scaling(cpu_clk[cpu]->fmax[i] / 1000);
-		if (freq < 0)
+		/* show only those used in scaling */
+		if (!is_used_by_scaling(freq = cpu_clk[0]->fmax[i] / 1000))
 			continue;
 
 		len += sprintf(buf + len, "%dmhz: %u mV\n", freq / 1000,
-			       cpu_clk[cpu]->vdd_class->vdd_uv[i] / 1000);
+			       cpu_clk[0]->vdd_class->vdd_uv[i] / 1000);
 	}
-
 	return len;
 }
 
-ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
-			  char *buf, size_t count)
+ssize_t store_UV_mV_table(struct cpufreq_policy *policy, char *buf,
+				size_t count)
 {
 	int i, j;
 	int ret = 0;
-	unsigned int val, cpu = 0;
-	unsigned int num_levels = cpu_clk[cpu]->vdd_class->num_levels;
-	char size_cur[4];
+	unsigned int val;
+	char size_cur[8];
+	/* use only master core 0 */
+	int num_levels = cpu_clk[0]->vdd_class->num_levels;
 
-	if (cnt) {
-		cnt = 0;
-		return -EINVAL;
-	}
+	/* sanity checks */
+	if (num_levels < 0)
+		return -1;
 
 	for (i = 0; i < num_levels; i++) {
-		if (use_for_scaling(cpu_clk[cpu]->fmax[i] / 1000) < 0)
+		if (!is_used_by_scaling(cpu_clk[0]->fmax[i] / 1000))
 			continue;
 
 		ret = sscanf(buf, "%u", &val);
 		if (!ret)
 			return -EINVAL;
 
-		if (val > CPU_VDD_MAX)
-			val = CPU_VDD_MAX;
-		else if (val < CPU_VDD_MIN)
-			val = CPU_VDD_MIN;
+		/* bounds check */
+		val = min( max((unsigned int)val, (unsigned int)CPU_VDD_MIN),
+			(unsigned int)CPU_VDD_MAX);
 
+		/* apply it to all available cores */
 		for (j = 0; j < NR_CPUS; j++)
 			cpu_clk[j]->vdd_class->vdd_uv[i] = val * 1000;
 
+		/* Non-standard sysfs interface: advance buf */
 		ret = sscanf(buf, "%s", size_cur);
-		cnt = strlen(size_cur);
-		buf += cnt + 1;
+		buf += strlen(size_cur) + 1;
 	}
+	pr_warn("faux123: user voltage table modified!\n");
 
 	return ret;
 }
@@ -874,9 +792,6 @@ static int clock_krait_8974_driver_probe(struct platform_device *pdev)
 			rows = ret;
 		}
 	}
-
-	if (arg_cpu_oc > 0)
-		krait_update_freq(freq, uv, ua, rows, speed);
 
 	krait_update_uv(uv, rows, pvs ? 25000 : 0);
 
