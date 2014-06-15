@@ -653,12 +653,6 @@ static int cpufreq_parse_dt(struct device *dev)
 		if (i > 0 && f <= freq_table[i-1].frequency)
 			break;
 
-		//elementalx
-		if (f > arg_cpu_oc) {
-			nf = i;
-			break;
-		}
-
 		freq_table[i].index = i;
 		freq_table[i].frequency = f;
 
