@@ -309,6 +309,7 @@ struct CWMCU_platform_data {
 	int GS_chip_layout;
 	u8 ALS_goldh;
 	u8 ALS_goldl;
+	u8 ls_polling;
 
 };
 #endif 
