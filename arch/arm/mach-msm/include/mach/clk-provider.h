@@ -34,7 +34,10 @@
 #define HALT_VOTED	2	
 #define ENABLE		3	
 #define ENABLE_VOTED	4	
-#define DELAY		5	
+#define DELAY		5
+
+//elementalx
+extern unsigned long arg_cpu_oc;	
 
 struct clk_register_data {
 	char *name;
