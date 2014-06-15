@@ -1,0 +1,21 @@
+### GCC 4.9.1
+
+### Compilar Kernel
+make -j8 ARCH=arm CROSS_COMPILE=../arm-cortex_a15-linux-gnueabihf-linaro_4.9.1-2014.06/bin/arm-eabi-
+
+echo "checking for compiled kernel..."
+if [ -f arch/arm/boot/zImage ]
+then
+
+echo "Generating boot.img"
+cp arch/arm/boot/zImage ../AIK-Linux/split_img/zImage
+
+### Copiar zImage
+cd ../AIK-Linux
+./repackimg.sh
+cd ../android_kernel_htc_msm8974-cm-11.0
+
+echo "Finalizado"
+
+fi
+
