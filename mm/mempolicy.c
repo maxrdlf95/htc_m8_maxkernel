@@ -1985,6 +1985,13 @@ int mpol_parse_str(char *str, struct mempolicy **mpol, int unused)
 	if (IS_ERR(new))
 		goto out;
 
+if (mode != MPOL_PREFERRED)
+		new->v.nodes = nodes;
+	else if (nodelist)
+		new->v.preferred_node = first_node(nodes);
+	else
+		new->flags |= MPOL_F_LOCAL;
+
 	new->w.user_nodemask = nodes;
 
 	err = 0;
