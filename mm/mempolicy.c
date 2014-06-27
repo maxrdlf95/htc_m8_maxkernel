@@ -1912,11 +1912,11 @@ static const char * const policy_modes[] =
 
 
 #ifdef CONFIG_TMPFS
-int mpol_parse_str(char *str, struct mempolicy **mpol, int no_context)
+int mpol_parse_str(char *str, struct mempolicy **mpol, int unused)
 {
 	struct mempolicy *new = NULL;
 	unsigned short mode;
-	unsigned short uninitialized_var(mode_flags);
+	unsigned short mode_flags;
 	nodemask_t nodes;
 	char *nodelist = strchr(str, ':');
 	char *flags = strchr(str, '=');
@@ -1985,24 +1985,8 @@ int mpol_parse_str(char *str, struct mempolicy **mpol, int no_context)
 	if (IS_ERR(new))
 		goto out;
 
-	if (no_context) {
-		
-		new->w.user_nodemask = nodes;
-	} else {
-		int ret;
-		NODEMASK_SCRATCH(scratch);
-		if (scratch) {
-			task_lock(current);
-			ret = mpol_set_nodemask(new, &nodes, scratch);
-			task_unlock(current);
-		} else
-			ret = -ENOMEM;
-		NODEMASK_SCRATCH_FREE(scratch);
-		if (ret) {
-			mpol_put(new);
-			goto out;
-		}
-	}
+	new->w.user_nodemask = nodes;
+
 	err = 0;
 
 out:
@@ -2017,7 +2001,7 @@ out:
 }
 #endif 
 
-int mpol_to_str(char *buffer, int maxlen, struct mempolicy *pol, int no_context)
+int mpol_to_str(char *buffer, int maxlen, struct mempolicy *pol, int unused)
 {
 	char *p = buffer;
 	int l;
@@ -2040,7 +2024,7 @@ int mpol_to_str(char *buffer, int maxlen, struct mempolicy *pol, int no_context)
 	case MPOL_PREFERRED:
 		nodes_clear(nodes);
 		if (flags & MPOL_F_LOCAL)
-			mode = MPOL_LOCAL;	
+			mode = MPOL_LOCAL;
 		else
 			node_set(pol->v.preferred_node, nodes);
 		break;
@@ -2048,10 +2032,7 @@ int mpol_to_str(char *buffer, int maxlen, struct mempolicy *pol, int no_context)
 	case MPOL_BIND:
 		
 	case MPOL_INTERLEAVE:
-		if (no_context)
-			nodes = pol->w.user_nodemask;
-		else
-			nodes = pol->v.nodes;
+		nodes = pol->v.nodes;
 		break;
 
 	default:
