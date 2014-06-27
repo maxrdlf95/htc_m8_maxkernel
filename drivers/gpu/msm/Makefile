@@ -1,4 +1,4 @@
-ccflags-y := -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm -Ofast -DNDEBUG -ffast-math -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad
+ccflags-y := -Iinclude/uapi/drm -Iinclude/drm -Idrivers/gpu/msm
 
 msm_kgsl_core-y = \
 	kgsl.o \
@@ -10,7 +10,8 @@ msm_kgsl_core-y = \
 	kgsl_gpummu.o \
 	kgsl_iommu.o \
 	kgsl_snapshot.o \
-	kgsl_events.o
+	kgsl_events.o \
+	kgsl_htc.o
 
 msm_kgsl_core-$(CONFIG_DEBUG_FS) += kgsl_debugfs.o
 msm_kgsl_core-$(CONFIG_MSM_KGSL_CFF_DUMP) += kgsl_cffdump.o
