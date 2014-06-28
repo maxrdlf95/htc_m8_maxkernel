@@ -29,8 +29,6 @@
 extern unsigned int cpq_max_cpus(void);
 extern unsigned int cpq_min_cpus(void);
 
-extern unsigned long avg_nr_running(void);
-
 typedef enum {
 	DISABLED,
 	IDLE,
