@@ -1798,7 +1798,7 @@ static void dmi_check_multi(void)
 	multi_checked = 1;
 }
 
-__cpuinit int apic_is_clustered_box(void)
+int apic_is_clustered_box(void)
 {
 	dmi_check_multi();
 	if (multi)
