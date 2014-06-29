@@ -1777,7 +1777,7 @@ static void mce_reenable_cpu(void *h)
 	}
 }
 
-static int __cpuinit
+static int
 mce_cpu_callback(struct notifier_block *nfb, unsigned long action, void *hcpu)
 {
 	unsigned int cpu = (unsigned long)hcpu;

@@ -679,7 +679,7 @@ static void threshold_remove_device(unsigned int cpu)
 	}
 }
 
-static void __cpuinit
+static void
 amd_64_threshold_cpu_callback(unsigned long action, unsigned int cpu)
 {
 	switch (action) {

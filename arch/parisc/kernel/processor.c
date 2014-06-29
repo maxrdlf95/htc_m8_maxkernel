@@ -50,7 +50,7 @@ DEFINE_PER_CPU(struct cpuinfo_parisc, cpu_data);
 extern int update_cr16_clocksource(void);	
 
 
-static void __cpuinit
+static void
 init_percpu_prof(unsigned long cpunum)
 {
 	struct cpuinfo_parisc *p;

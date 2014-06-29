@@ -567,7 +567,7 @@ static void build_huge_tlb_write_entry(u32 **p,
 	build_restore_pagemask(p, r, tmp, label_leave, restore_scratch);
 }
 
-static void __cpuinit
+static void
 build_is_huge_pte(u32 **p, struct uasm_reloc **r, unsigned int tmp,
 		unsigned int pmd, int lid)
 {
@@ -622,7 +622,7 @@ static void build_huge_handler_tail(u32 **p,
 #endif 
 
 #ifdef CONFIG_64BIT
-static void __cpuinit
+static void
 build_get_pmde64(u32 **p, struct uasm_label **l, struct uasm_reloc **r,
 		 unsigned int tmp, unsigned int ptr)
 {
@@ -686,7 +686,7 @@ build_get_pmde64(u32 **p, struct uasm_label **l, struct uasm_reloc **r,
 #endif
 }
 
-static void __cpuinit
+static void
 build_get_pgd_vmalloc64(u32 **p, struct uasm_label **l, struct uasm_reloc **r,
 			unsigned int bvaddr, unsigned int ptr,
 			enum vmalloc64_mode mode)
@@ -875,7 +875,7 @@ struct mips_huge_tlb_info {
 	int restore_scratch;
 };
 
-static struct mips_huge_tlb_info __cpuinit
+static struct mips_huge_tlb_info
 build_fast_tlb_refill_handler (u32 **p, struct uasm_label **l,
 			       struct uasm_reloc **r, unsigned int tmp,
 			       unsigned int ptr, int c0_scratch)
@@ -1237,7 +1237,7 @@ static void build_r4000_setup_pgd(void)
 }
 #endif
 
-static void __cpuinit
+static void
 iPTE_LW(u32 **p, unsigned int pte, unsigned int ptr)
 {
 #ifdef CONFIG_SMP
@@ -1257,7 +1257,7 @@ iPTE_LW(u32 **p, unsigned int pte, unsigned int ptr)
 #endif
 }
 
-static void __cpuinit
+static void
 iPTE_SW(u32 **p, struct uasm_reloc **r, unsigned int pte, unsigned int ptr,
 	unsigned int mode)
 {
@@ -1312,7 +1312,7 @@ iPTE_SW(u32 **p, struct uasm_reloc **r, unsigned int pte, unsigned int ptr,
 #endif
 }
 
-static void __cpuinit
+static void
 build_pte_present(u32 **p, struct uasm_reloc **r,
 		  int pte, int ptr, int scratch, enum label_id lid)
 {
@@ -1339,7 +1339,7 @@ build_pte_present(u32 **p, struct uasm_reloc **r,
 	}
 }
 
-static void __cpuinit
+static void
 build_make_valid(u32 **p, struct uasm_reloc **r, unsigned int pte,
 		 unsigned int ptr)
 {
@@ -1352,7 +1352,7 @@ build_make_valid(u32 **p, struct uasm_reloc **r, unsigned int pte,
  * Check if PTE can be written to, if not branch to LABEL. Regardless
  * restore PTE with value from PTR when done.
  */
-static void __cpuinit
+static void
 build_pte_writable(u32 **p, struct uasm_reloc **r,
 		   unsigned int pte, unsigned int ptr, int scratch,
 		   enum label_id lid)
@@ -1369,7 +1369,7 @@ build_pte_writable(u32 **p, struct uasm_reloc **r,
 		uasm_i_nop(p);
 }
 
-static void __cpuinit
+static void
 build_make_write(u32 **p, struct uasm_reloc **r, unsigned int pte,
 		 unsigned int ptr)
 {
@@ -1379,7 +1379,7 @@ build_make_write(u32 **p, struct uasm_reloc **r, unsigned int pte,
 	iPTE_SW(p, r, pte, ptr, mode);
 }
 
-static void __cpuinit
+static void
 build_pte_modifiable(u32 **p, struct uasm_reloc **r,
 		     unsigned int pte, unsigned int ptr, int scratch,
 		     enum label_id lid)
@@ -1401,7 +1401,7 @@ build_pte_modifiable(u32 **p, struct uasm_reloc **r,
 
 
 
-static void __cpuinit
+static void
 build_r3000_pte_reload_tlbwi(u32 **p, unsigned int pte, unsigned int tmp)
 {
 	uasm_i_mtc0(p, pte, C0_ENTRYLO0); 
@@ -1411,7 +1411,7 @@ build_r3000_pte_reload_tlbwi(u32 **p, unsigned int pte, unsigned int tmp)
 	uasm_i_rfe(p); 
 }
 
-static void __cpuinit
+static void
 build_r3000_tlb_reload_write(u32 **p, struct uasm_label **l,
 			     struct uasm_reloc **r, unsigned int pte,
 			     unsigned int tmp)
@@ -1429,7 +1429,7 @@ build_r3000_tlb_reload_write(u32 **p, struct uasm_label **l,
 	uasm_i_rfe(p); 
 }
 
-static void __cpuinit
+static void
 build_r3000_tlbchange_handler_head(u32 **p, unsigned int pte,
 				   unsigned int ptr)
 {
@@ -1540,7 +1540,7 @@ static void build_r3000_tlb_modify_handler(void)
 }
 #endif 
 
-static struct work_registers __cpuinit
+static struct work_registers
 build_r4000_tlbchange_handler_head(u32 **p, struct uasm_label **l,
 				   struct uasm_reloc **r)
 {
@@ -1571,7 +1571,7 @@ build_r4000_tlbchange_handler_head(u32 **p, struct uasm_label **l,
 	return wr;
 }
 
-static void __cpuinit
+static void
 build_r4000_tlbchange_handler_tail(u32 **p, struct uasm_label **l,
 				   struct uasm_reloc **r, unsigned int tmp,
 				   unsigned int ptr)
