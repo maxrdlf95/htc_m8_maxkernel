@@ -39,7 +39,7 @@
 #endif
 
 #define onchip_setup(x)					\
-static int x##_disabled __cpuinitdata = !cpu_has_##x;	\
+static int x##_disabled = !cpu_has_##x;	\
 							\
 static int x##_setup(char *opts)			\
 {							\

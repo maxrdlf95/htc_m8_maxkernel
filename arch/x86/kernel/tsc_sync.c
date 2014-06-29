@@ -21,14 +21,14 @@
 #include <linux/nmi.h>
 #include <asm/tsc.h>
 
-static __cpuinitdata atomic_t start_count;
-static __cpuinitdata atomic_t stop_count;
+static atomic_t start_count;
+static atomic_t stop_count;
 
-static __cpuinitdata arch_spinlock_t sync_lock = __ARCH_SPIN_LOCK_UNLOCKED;
+static arch_spinlock_t sync_lock = __ARCH_SPIN_LOCK_UNLOCKED;
 
-static __cpuinitdata cycles_t last_tsc;
-static __cpuinitdata cycles_t max_warp;
-static __cpuinitdata int nr_warps;
+static cycles_t last_tsc;
+static cycles_t max_warp;
+static int nr_warps;
 
 static void check_tsc_warp(unsigned int timeout)
 {

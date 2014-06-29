@@ -66,7 +66,7 @@ static DEFINE_PER_CPU(struct task_struct *, idle_thread_array);
 static DEFINE_PER_CPU(int, cpu_state) = { 0 };
 
 #else
-static struct task_struct *idle_thread_array[NR_CPUS] __cpuinitdata ;
+static struct task_struct *idle_thread_array[NR_CPUS] ;
 #define get_idle_for_cpu(x)      (idle_thread_array[(x)])
 #define set_idle_for_cpu(x, p)   (idle_thread_array[(x)] = (p))
 #endif

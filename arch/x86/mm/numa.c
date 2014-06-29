@@ -52,7 +52,7 @@ static __init int numa_setup(char *opt)
 }
 early_param("numa", numa_setup);
 
-s16 __apicid_to_node[MAX_LOCAL_APIC] __cpuinitdata = {
+s16 __apicid_to_node[MAX_LOCAL_APIC] = {
 	[0 ... MAX_LOCAL_APIC-1] = NUMA_NO_NODE
 };
 

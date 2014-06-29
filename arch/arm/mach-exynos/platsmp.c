@@ -38,7 +38,7 @@ extern void exynos4_secondary_startup(void);
 				S5P_INFORM5 : S5P_VA_SYSRAM)
 
 
-volatile int __cpuinitdata pen_release = -1;
+volatile int pen_release = -1;
 
 static void write_pen_release(int val)
 {

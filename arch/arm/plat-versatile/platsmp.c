@@ -19,7 +19,7 @@
 #include <asm/smp_plat.h>
 #include <asm/hardware/gic.h>
 
-volatile int __cpuinitdata pen_release = -1;
+volatile int pen_release = -1;
 
 static void write_pen_release(int val)
 {

@@ -166,7 +166,7 @@ void __init early_sn_setup(void)
 }
 
 extern int platform_intr_list[];
-static int __cpuinitdata shub_1_1_found;
+static int shub_1_1_found;
 
 
 static inline int is_shub_1_1(int nasid)

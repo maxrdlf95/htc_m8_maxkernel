@@ -1152,7 +1152,7 @@ static inline void map_kernel(void)
 
 extern void sparc_context_init(int);
 
-void (*poke_srmmu)(void) __cpuinitdata = NULL;
+void (*poke_srmmu)(void) = NULL;
 
 extern unsigned long bootmem_init(unsigned long *pages_avail);
 
