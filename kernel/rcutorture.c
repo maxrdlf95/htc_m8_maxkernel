@@ -1384,7 +1384,7 @@ static void rcu_torture_onoff_cleanup(void)
 
 #endif 
 
-static int __cpuinit rcu_torture_stall(void *args)
+static int rcu_torture_stall(void *args)
 {
 	unsigned long stop_at;
 

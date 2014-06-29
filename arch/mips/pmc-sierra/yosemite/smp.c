@@ -93,12 +93,12 @@ static void yos_send_ipi_mask(const struct cpumask *mask, unsigned int action)
 		yos_send_ipi_single(i, action);
 }
 
-static void __cpuinit yos_init_secondary(void)
+static void yos_init_secondary(void)
 {
 	set_c0_status(ST0_CO | ST0_IE | ST0_IM);
 }
 
-static void __cpuinit yos_smp_finish(void)
+static void yos_smp_finish(void)
 {
 }
 
@@ -106,7 +106,7 @@ static void yos_cpus_done(void)
 {
 }
 
-static void __cpuinit yos_boot_secondary(int cpu, struct task_struct *idle)
+static void yos_boot_secondary(int cpu, struct task_struct *idle)
 {
 	unsigned long gp = (unsigned long) task_thread_info(idle);
 	unsigned long sp = __KSTK_TOS(idle);

@@ -362,7 +362,7 @@ static int __init set_ntlb(char *str)
 
 __setup("ntlb=", set_ntlb);
 
-void __cpuinit tlb_init(void)
+void tlb_init(void)
 {
 	write_c0_pagemask(PM_DEFAULT_MASK);
 	write_c0_wired(0);

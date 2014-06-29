@@ -719,7 +719,7 @@ void __init tsc_init(void)
 }
 
 #ifdef CONFIG_SMP
-unsigned long __cpuinit calibrate_delay_is_known(void)
+unsigned long calibrate_delay_is_known(void)
 {
 	int i, cpu = smp_processor_id();
 

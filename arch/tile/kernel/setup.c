@@ -231,7 +231,7 @@ static void *__init setup_pa_va_mapping(void)
 }
 #endif 
 
-static void __cpuinit store_permanent_mappings(void)
+static void store_permanent_mappings(void)
 {
 	int i;
 
@@ -740,7 +740,7 @@ subsys_initcall(topology_init);
 
 #endif 
 
-void __cpuinit setup_cpu(int boot)
+void setup_cpu(int boot)
 {
 	
 	if (!boot)
