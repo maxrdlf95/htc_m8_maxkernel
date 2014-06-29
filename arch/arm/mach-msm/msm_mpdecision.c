@@ -51,7 +51,9 @@ DEFINE_PER_CPU(struct msm_mpdec_cpudata_t, msm_mpdec_cpudata);
 EXPORT_PER_CPU_SYMBOL_GPL(msm_mpdec_cpudata);
 
 static bool mpdec_suspended = false;
+#ifndef CONFIG_HAS_EARLYSUSPEND
 static struct notifier_block msm_mpdec_lcd_notif;
+#endif
 static struct delayed_work msm_mpdec_work;
 static struct workqueue_struct *msm_mpdec_workq;
 static DEFINE_MUTEX(mpdec_msm_cpu_lock);
@@ -449,16 +451,16 @@ static void mpdec_input_event(struct input_handle *handle, unsigned int type,
 				unsigned int code, int value) {
 	int i = 0;
 
+#ifdef CONFIG_BRICKED_THERMAL
+	if (bricked_thermal_throttled > 0)
+		return;
+#endif
+
 	if (!msm_mpdec_tuners_ins.boost_enabled)
 		return;
 
 	if (!is_screen_on)
 		return;
-
-#ifdef CONFIG_BRICKED_THERMAL
-	if (bricked_thermal_throttled > 0)
-		return;
-#endif
 
 	for_each_online_cpu(i) {
 		queue_work_on(i, mpdec_input_wq, &per_cpu(mpdec_input_work, i));
@@ -618,11 +620,15 @@ static int msm_mpdec_lcd_notifier_callback(struct notifier_block *this,
 }
 #else
 static void msm_mpdec_early_suspend(struct early_suspend *h) {
-	   schedule_work(&msm_mpdec_suspend_work);
+	mutex_lock(&mpdec_msm_susres_lock);
+	schedule_work(&msm_mpdec_suspend_work);
+	mutex_unlock(&mpdec_msm_susres_lock);
 }
 
 static void msm_mpdec_late_resume(struct early_suspend *h) {
-	   schedule_work(&msm_mpdec_resume_work);
+	mutex_lock(&mpdec_msm_susres_lock);
+	schedule_work(&msm_mpdec_resume_work);
+	mutex_unlock(&mpdec_msm_susres_lock);
 }
 
 static struct early_suspend msm_mpdec_early_suspend_handler = {
@@ -1208,7 +1214,9 @@ static int __init msm_mpdec_init(void) {
 late_initcall(msm_mpdec_init);
 
 void msm_mpdec_exit(void) {
+#ifndef CONFIG_HAS_EARLYSUSPEND
 	lcd_unregister_client(&msm_mpdec_lcd_notif);
+#endif
 #ifdef CONFIG_MSM_MPDEC_INPUTBOOST_CPUMIN
 	input_unregister_handler(&mpdec_input_handler);
 	destroy_workqueue(msm_mpdec_revib_workq);
