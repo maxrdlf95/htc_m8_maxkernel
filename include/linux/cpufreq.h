@@ -50,7 +50,6 @@ static inline void disable_cpufreq(void) { }
 #define CPUFREQ_POLICY_POWERSAVE	(1)
 #define CPUFREQ_POLICY_PERFORMANCE	(2)
 
-#define MIN_CPU_UTIL_NOTIFY   40
 
 struct cpufreq_governor;
 
@@ -79,12 +78,11 @@ struct cpufreq_policy {
 	unsigned int		cpu;    
 	struct cpufreq_cpuinfo	cpuinfo;
 
-	unsigned int		min;
-	unsigned int		max;
-	unsigned int		cur;
-	unsigned int            util;
-	unsigned int		policy;
-	struct cpufreq_governor	*governor;
+	unsigned int		min;    
+	unsigned int		max;    
+	unsigned int		cur;    
+	unsigned int		policy; 
+	struct cpufreq_governor	*governor; 
 
 	struct work_struct	update; 
 
@@ -171,9 +169,8 @@ int lock_policy_rwsem_write(int cpu);
 void unlock_policy_rwsem_write(int cpu);
 
 
-#define CPUFREQ_RELATION_L 0 /* lowest frequency at or above target */
-#define CPUFREQ_RELATION_H 1 /* highest frequency below or at target */
-#define CPUFREQ_RELATION_C 2 /* closest frequency to target */
+#define CPUFREQ_RELATION_L 0  
+#define CPUFREQ_RELATION_H 1  
 
 struct freq_attr;
 
@@ -216,8 +213,6 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver_data);
 
 
 void cpufreq_notify_transition(struct cpufreq_freqs *freqs, unsigned int state);
-void cpufreq_notify_utilization(struct cpufreq_policy *policy,
-		unsigned int load);
 
 #ifdef CONFIG_MSM_CPUFREQ_LIMITER
 extern unsigned int limited_max_freq;
