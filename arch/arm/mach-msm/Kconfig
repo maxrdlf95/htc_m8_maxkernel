@@ -36,6 +36,7 @@ config ARCH_MSM7X27
 	select CLEANCACHE
 	select QCACHE
 	select MSM_PM2 if PM
+	#select MSM_RUN_QUEUE_STATS if MSM_SOC_REV_A
 	select DONT_MAP_HOLE_AFTER_MEMBANK0
 	select MIGHT_HAVE_CACHE_L2X0
 	select MSM_MODEM_RESTART
@@ -286,7 +287,6 @@ config ARCH_MSM8974
 	select ARCH_WANT_KMAP_ATOMIC_FLUSH
 	select KRAIT_REGULATOR
 	select ENABLE_VMALLOC_SAVINGS
-	select HAS_MACH_MEMUTILS
 
 config ARCH_APQ8084
 	bool "APQ8084"
@@ -347,6 +347,7 @@ config ARCH_FSM9900
 	select SPARSE_IRQ
 	select REGULATOR
 	select ARM_HAS_SG_CHAIN
+	#select MSM_RUN_QUEUE_STATS
 	select MSM_NOPM
 
 config ARCH_FSM9XXX
@@ -392,6 +393,7 @@ config ARCH_MSM8625
 	select ARCH_MSM_CORTEXMP
 	select MULTI_IRQ_HANDLER
 	select ARM_TICKET_LOCKS
+	#select MSM_RUN_QUEUE_STATS
 	select MIGHT_HAVE_CACHE_L2X0
 	select ARM_HAS_SG_CHAIN
 	select CPU_HAS_L2_PMU
@@ -475,6 +477,7 @@ config ARCH_MSM8610
 	select PM_DEVFREQ
 	select MSM_DEVFREQ_CPUBW
 	select MSM_PIL
+	#select MSM_RUN_QUEUE_STATS
 	select ARM_HAS_SG_CHAIN
 	select REGULATOR
 	select MSM_RPM_REGULATOR_SMD
@@ -516,6 +519,7 @@ config ARCH_MSM8226
 	select PM_DEVFREQ
 	select MSM_DEVFREQ_CPUBW
 	select MSM_PIL
+	#select MSM_RUN_QUEUE_STATS
 	select ARM_HAS_SG_CHAIN
 	select REGULATOR
 	select MSM_RPM_REGULATOR_SMD
@@ -547,6 +551,7 @@ config ARCH_MSMSAMARIUM
 	select MAY_HAVE_SPARSE_IRQ
 	select SPARSE_IRQ
 	select ARM_HAS_SG_CHAIN
+	#select MSM_RUN_QUEUE_STATS
 	select ARCH_WANT_KMAP_ATOMIC_FLUSH
 	select QMI_ENCDEC
 endmenu
@@ -1965,21 +1970,6 @@ config MSM_DALRPC_TEST
 	help
 	  Exercises DAL RPC calls to QDSP6.
 
-config MSM_MPDEC
-	bool "Enable kernel based mpdecision"
-	depends on MSM_SMP
-	default n
-	help
-	  This enables kernel based multi core control.
-	  (up/down hotplug based on load)
-
-config MSM_MPDEC_INPUTBOOST_CPUMIN
-	bool "Enable kernel based mpdecision"
-	depends on MSM_MPDEC
-	default n
-	help
-	  This pushes the cpu min speed to predefined values on input events.
-
 if CPU_FREQ_MSM
 
 config MSM_CPU_FREQ_SET_MIN_MAX
@@ -2014,39 +2004,6 @@ config MSM_DEVFREQ_CPUBW
 	  DDR IB/AB bandwidth votes. This driver provides a SoC topology
 	  agnostic interface to so that some of the devfreq governors can be
 	  shared across SoCs.
-
-config FORCE_FAST_CHARGE
-	bool "Force fast charging (AC/USB) by Yank555.lu"
-	default n
-	help
-	  A simple sysfs interface to force adapters that
-	  are detected as USB to charge as AC (1A/h) or to set
-	  custom charging currents for AC and USB.
-
-config CPU_VOLTAGE_TABLE
-	bool "Enable CPU Voltage Table via sysfs for adjustements"
-	default n
-	help
-	  DTS based kernel User Votlage Control
-
-config MSM_CPUFREQ_LIMITER
-	tristate "MSM CPU frequency limiter"
-	default n
-	help
-	  This driver limits MSM CPU frequency through sysfs file system.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_stats.
-
-	  If in doubt, say N.
-
-config TURBO_BOOST
-	bool "Enable CPU Turbo boost option"
-	default y
-	help
-	  This option allows overclocking of 2 cores to higher clock rate
-	  than stock maximum.  When more than 2 cores are active, the clock
-	  is limited to stock max speeds
 
 config MSM_AVS_HW
 	bool "Enable Adaptive Voltage Scaling (AVS)"
@@ -3201,11 +3158,6 @@ config WALL_CLK_SYSFS
 	 Support the wallclk directory in sysfs filesystem to enable the
 	 wall clock simulation and read the current SFN.
 
-config HAS_MACH_MEMUTILS
-	default n
-	bool "Motorola MSM memcpy enhancements"
-	help
-	Faster memcpy performance for Krait
 
 config KRAIT_REGULATOR
 	bool "Support Kraits powered via ganged regulators in the pmic"
@@ -3246,30 +3198,11 @@ config MACH_M8
         help
           Support for HTC MSM8974 M8
 
-config MACH_M8_WHL
-        depends on ARCH_MSM8974
-        bool "MSM8974 M8_WHL"
-        help
-          Support for HTC MSM8974 M8_WHL
-
-config MACH_M8_WL
-        depends on ARCH_MSM8974
-        bool "MSM8974 M8_WL"
-        help
-          Support for HTC MSM8974 M8_WL
-
 config MACH_NAME
         string "Macine Name"
         default ""
         help
           Support for MACH Name
-
-config FORCE_FAST_CHARGE
-	bool "Increase input current limit to 1100mA when charging via USB"
-	default y
-	help
-	  A simple sysfs interface to increase input current limit to
-	  1100mA when charging via USB.
 
 endif
 
