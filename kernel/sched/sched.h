@@ -162,12 +162,6 @@ struct cfs_bandwidth { };
 
 struct cfs_rq {
 	struct load_weight load;
-	/*
-	 * The difference between nr_running and h_nr_running is:
-	 * nr_running:   present how many entity would take part in the sharing
-	 *               the cpu power of that cfs_rq
-	 * h_nr_running: present how many tasks in current cfs runqueue
-	 */
 	unsigned long nr_running, h_nr_running;
 
 	u64 exec_clock;
@@ -281,7 +275,7 @@ struct rq {
 #endif
 	int skip_clock_update;
 
-	/* capture load from *all* tasks on this cpu: */
+	
 	struct load_weight load;
 	unsigned long nr_load_updates;
 	u64 nr_switches;
@@ -718,7 +712,6 @@ extern void sysrq_sched_debug_show(void);
 extern void sched_init_granularity(void);
 extern void update_max_interval(void);
 extern void update_group_power(struct sched_domain *sd, int cpu);
-extern int update_runtime(struct notifier_block *nfb, unsigned long action, void *hcpu);
 extern void init_sched_rt_class(void);
 extern void init_sched_fair_class(void);
 
@@ -786,13 +779,11 @@ static inline unsigned int do_avg_nr_running(struct rq *rq)
 
 static inline void inc_nr_running(struct rq *rq)
 {
-
-#if defined(CONFIG_MSM_DCVS)
-	sched_update_nr_prod(cpu_of(rq), rq->nr_running, true);
-#endif
 #ifdef CONFIG_INTELLI_PLUG
 	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
 #endif
+
+	sched_update_nr_prod(cpu_of(rq), rq->nr_running, true);
 #ifdef CONFIG_INTELLI_PLUG
 	write_seqcount_begin(&nr_stats->ave_seqcnt);
 	nr_stats->ave_nr_running = do_avg_nr_running(rq);
@@ -806,12 +797,11 @@ static inline void inc_nr_running(struct rq *rq)
 
 static inline void dec_nr_running(struct rq *rq)
 {
-#if defined(CONFIG_MSM_DCVS)
-	sched_update_nr_prod(cpu_of(rq), rq->nr_running, false);
-#endif
 #ifdef CONFIG_INTELLI_PLUG
 	struct nr_stats_s *nr_stats = &per_cpu(runqueue_stats, rq->cpu);
 #endif
+
+	sched_update_nr_prod(cpu_of(rq), rq->nr_running, false);
 #ifdef CONFIG_INTELLI_PLUG
 	write_seqcount_begin(&nr_stats->ave_seqcnt);
 	nr_stats->ave_nr_running = do_avg_nr_running(rq);
