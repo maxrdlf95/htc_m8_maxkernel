@@ -789,6 +789,39 @@ static inline void update_entity_shares_tick(struct cfs_rq *cfs_rq)
 }
 #endif 
 
+static inline unsigned int task_load(struct task_struct *p)
+{
+	return p->ravg.demand;
+}
+
+static inline unsigned int max_task_load(void)
+{
+	return sched_ravg_window;
+}
+
+/* Return task demand in percentage scale */
+unsigned int pct_task_load(struct task_struct *p)
+{
+	unsigned int load;
+
+	load = div64_u64((u64)task_load(p) * 100, (u64)max_task_load());
+
+	return load;
+}
+
+void init_new_task_load(struct task_struct *p)
+{
+	int i;
+	u64 wallclock = sched_clock();
+
+	p->ravg.sum			= 0;
+	p->ravg.demand			= 0;
+	p->ravg.window_start		= wallclock;
+	p->ravg.mark_start		= wallclock;
+	for (i = 0; i < RAVG_HIST_SIZE; ++i)
+		p->ravg.sum_history[i] = 0;
+}
+
 static void enqueue_sleeper(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 #ifdef CONFIG_SCHEDSTATS
@@ -2460,6 +2493,7 @@ struct lb_env {
 };
 
 static DEFINE_PER_CPU(bool, dbs_boost_needed);
+static DEFINE_PER_CPU(int, dbs_boost_load_moved);
 
 static void move_task(struct task_struct *p, struct lb_env *env)
 {
@@ -2545,6 +2579,7 @@ static int move_one_task(struct lb_env *env)
 
 		move_task(p, env);
 		schedstat_inc(env->sd, lb_gained[env->idle]);
+		per_cpu(dbs_boost_load_moved, env->dst_cpu) += pct_task_load(p);
 		return 1;
 	}
 	return 0;
@@ -2596,6 +2631,7 @@ static int move_tasks(struct lb_env *env)
 		move_task(p, env);
 		pulled++;
 		env->load_move -= load;
+		per_cpu(dbs_boost_load_moved, env->dst_cpu) += pct_task_load(p);
 
 #ifdef CONFIG_PREEMPT
 		if (env->idle == CPU_NEWLY_IDLE)
@@ -3422,6 +3458,7 @@ static int load_balance(int this_cpu, struct rq *this_rq,
 
 	cpumask_copy(cpus, cpu_active_mask);
 
+	per_cpu(dbs_boost_load_moved, this_cpu) = 0;
 	schedstat_inc(sd, lb_count[idle]);
 
 redo:
@@ -3467,6 +3504,7 @@ more_balance:
 		double_rq_lock(this_rq, busiest);
 		if (!env.loop)
 			update_h_load(env.src_cpu);
+		cur_ld_moved = move_tasks(&env);
 		ld_moved += move_tasks(&env);
 		double_rq_unlock(this_rq, busiest);
 		local_irq_restore(flags);
@@ -3520,13 +3558,21 @@ more_balance:
 		}
 	} else {
 		sd->nr_balance_failed = 0;
-		if (per_cpu(dbs_boost_needed, this_cpu)) {
-			per_cpu(dbs_boost_needed, this_cpu) = false;
+ 		if (per_cpu(dbs_boost_needed, this_cpu)) {
+			struct migration_notify_data mnd;
+			mnd.src_cpu = cpu_of(busiest);
+			mnd.dest_cpu = this_cpu;
+			mnd.load = per_cpu(dbs_boost_load_moved, this_cpu);
+			if (mnd.load > 100)
+				mnd.load = 100;
 			atomic_notifier_call_chain(&migration_notifier_head,
-						   this_cpu,
-						   (void *)cpu_of(busiest));
-		}
-	}
+						   0, (void *)&mnd);
+			per_cpu(dbs_boost_needed, this_cpu) = false;
+			per_cpu(dbs_boost_load_moved, this_cpu) = 0;
+
+ 		}
+
+ 	}
 	if (likely(!active_balance)) {
 		
 		sd->balance_interval = sd->min_interval;
@@ -3613,6 +3659,7 @@ static int active_load_balance_cpu_stop(void *data)
 
 	raw_spin_lock_irq(&busiest_rq->lock);
 
+	per_cpu(dbs_boost_load_moved, target_cpu) = 0;
 	
 	if (unlikely(busiest_cpu != smp_processor_id() ||
 		     !busiest_rq->active_balance))
