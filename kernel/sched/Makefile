@@ -17,4 +17,3 @@ obj-$(CONFIG_SCHED_AUTOGROUP) += auto_group.o
 obj-$(CONFIG_SCHEDSTATS) += stats.o
 obj-$(CONFIG_SCHED_DEBUG) += debug.o
 
-obj-$(CONFIG_MSM_DCVS) += sched_avg.o
