@@ -45,31 +45,9 @@ static int devfreq_simple_ondemand_func(struct devfreq *df,
 	if (err)
 		return err;
 
-	if (data) {
-		if (data->upthreshold)
-			dfso_upthreshold = data->upthreshold;
-		if (data->downdifferential)
-			dfso_downdifferential = data->downdifferential;
-	}
-	if (dfso_upthreshold > 100 ||
-	    dfso_upthreshold < dfso_downdifferential)
-		return -EINVAL;
-
 	if (stat.busy_time >= (1 << 24) || stat.total_time >= (1 << 24)) {
 		stat.busy_time >>= 7;
 		stat.total_time >>= 7;
-	}
-
-	if (data && data->simple_scaling) {
-		if (stat.busy_time * 100 >
-		    stat.total_time * dfso_upthreshold)
-			*freq = max;
-		else if (stat.busy_time * 100 <
-		    stat.total_time * dfso_downdifferential)
-			*freq = min;
-		else
-			*freq = df->previous_freq;
-		return 0;
 	}
 
 	if (stat.total_time == 0) {
