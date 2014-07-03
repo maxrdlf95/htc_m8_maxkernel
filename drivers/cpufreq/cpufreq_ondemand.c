@@ -1410,7 +1410,7 @@ set_freq:
 
 		if (dbs_tuners_ins.powersave_bias) {
 			freq_next = powersave_bias_target(policy, freq_next,
-					CPUFREQ_RELATION_L);
+					CPUFREQ_RELATION_C);
 		}
 
 		if (dbs_tuners_ins.freq_down_step) {
