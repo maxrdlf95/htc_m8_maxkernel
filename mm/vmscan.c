@@ -1762,6 +1762,8 @@ static bool sleeping_prematurely(pg_data_t *pgdat, int order, long remaining,
 	unsigned long balanced = 0;
 	bool all_zones_ok = true;
 
+	if (need_resched())
+		return false;
 	
 	if (remaining)
 		return true;
