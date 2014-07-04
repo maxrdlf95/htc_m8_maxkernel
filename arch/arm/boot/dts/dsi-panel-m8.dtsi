@@ -2,6 +2,8 @@
 	qcom,mdss_dsi_m8_lg_1080p_video {
 		compatible = "qcom,mdss-dsi-panel";
 		status = "disable";
+		qcom,ulps-enabled;
+		qcom,partial-update-enabled;
 		qcom,cont-splash-enabled;
 		qcom,mdss-dsi-panel-name = "LG Renesas 1080p video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
@@ -116,6 +118,8 @@
 	qcom,mdss_dsi_sharp_1080p_video {
 		compatible = "qcom,mdss-dsi-panel";
 		status = "disable";
+		qcom,ulps-enabled;
+		qcom,partial-update-enabled;
 		qcom,cont-splash-enabled;
 		qcom,mdss-dsi-panel-name = "sharp 1080p video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
@@ -568,6 +572,8 @@
 	qcom,mdss_dsi_m8_sharp_novatek_35695_1080p_video {
 		compatible = "qcom,mdss-dsi-panel";
 		status = "disable";
+		qcom,ulps-enabled;
+		qcom,partial-update-enabled;
 		qcom,cont-splash-enabled;
 		qcom,mdss-dsi-panel-name = "m8 1080p sharp/NT35695 video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
@@ -765,6 +771,8 @@
 	qcom,mdss_dsi_m8_lg_novatek_35695_1080p_video {
 		compatible = "qcom,mdss-dsi-panel";
 		status = "disable";
+		qcom,ulps-enabled;
+		qcom,partial-update-enabled;
 		qcom,cont-splash-enabled;
 		qcom,mdss-dsi-panel-name = "m8 1080p LG/NT35695 video mode dsi panel";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
