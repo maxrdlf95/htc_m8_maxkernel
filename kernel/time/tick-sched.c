@@ -353,7 +353,7 @@ void tick_nohz_irq_exit(void)
 
 	if (!ts->inidle)
 		return;
-	
+
 	menu_hrtimer_cancel();
 	tick_nohz_stop_sched_tick(ts);
 }

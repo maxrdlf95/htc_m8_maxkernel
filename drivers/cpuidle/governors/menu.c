@@ -234,6 +234,7 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 
 	/* not deepest C-state chosen for low predicted residency */
 	if (low_predicted) {
+		unsigned int timer_us = 0;
 		unsigned int perfect_us = 0;
 
 		/*
