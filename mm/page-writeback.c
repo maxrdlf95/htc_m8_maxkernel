@@ -39,11 +39,11 @@
 
 #include "internal.h"
 
-#define MAX_PAUSE		max(HZ/5, 1)
+#define MAX_PAUSE		200
 
 #define DIRTY_POLL_THRESH	(128 >> (PAGE_SHIFT - 10))
 
-#define BANDWIDTH_INTERVAL	max(HZ/5, 1)
+#define BANDWIDTH_INTERVAL	200
 
 #define RATELIMIT_CALC_SHIFT	10
 
