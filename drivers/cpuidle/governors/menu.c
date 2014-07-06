@@ -28,7 +28,13 @@
 #define MAX_INTERESTING 50000
 #define STDDEV_THRESH 400
 
+/* 60 * 60 > STDDEV_THRESH * INTERVALS = 400 * 8 */
+#define MAX_DEVIATION 60
 
+static DEFINE_PER_CPU(struct hrtimer, menu_hrtimer);
+static DEFINE_PER_CPU(int, hrtimer_status);
+/* menu hrtimer mode */
+enum {MENU_HRTIMER_STOP, MENU_HRTIMER_REPEAT};
 
 struct menu_device {
 	int		last_state_idx;
@@ -86,6 +92,30 @@ static u64 div_round64(u64 dividend, u32 divisor)
 	return div_u64(dividend + (divisor / 2), divisor);
 }
 
+/* Cancel the hrtimer if it is not triggered yet */
+void menu_hrtimer_cancel(void)
+{
+	int cpu = smp_processor_id();
+	struct hrtimer *hrtmr = &per_cpu(menu_hrtimer, cpu);
+
+	/* The timer is still not time out*/
+	if (per_cpu(hrtimer_status, cpu)) {
+		hrtimer_cancel(hrtmr);
+		per_cpu(hrtimer_status, cpu) = MENU_HRTIMER_STOP;
+	}
+}
+EXPORT_SYMBOL_GPL(menu_hrtimer_cancel);
+
+/* Call back for hrtimer is triggered */
+static enum hrtimer_restart menu_hrtimer_notify(struct hrtimer *hrtimer)
+{
+	int cpu = smp_processor_id();
+
+	per_cpu(hrtimer_status, cpu) = MENU_HRTIMER_STOP;
+
+	return HRTIMER_NORESTART;
+}
+
 static void detect_repeating_patterns(struct menu_device *data)
 {
 	int i;
@@ -99,7 +129,7 @@ static void detect_repeating_patterns(struct menu_device *data)
 
 	
 	if (avg > data->expected_us)
-		return;
+		return 0;
 
 	for (i = 0; i < INTERVALS; i++)
 		stddev += (data->intervals[i] - avg) *
@@ -108,8 +138,12 @@ static void detect_repeating_patterns(struct menu_device *data)
 	stddev = stddev / INTERVALS;
 
 
-	if (avg && stddev < STDDEV_THRESH)
+	if (avg && stddev < STDDEV_THRESH) {
 		data->predicted_us = avg;
+		ret = 1;
+	}
+
+	return ret;
 }
 
 static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
@@ -120,6 +154,9 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 	int i;
 	int multiplier;
 	struct timespec t;
+	int repeat = 0, low_predicted = 0;
+	int cpu = smp_processor_id();
+	struct hrtimer *hrtmr = &per_cpu(menu_hrtimer, cpu);
 
 	if (data->needs_update) {
 		menu_update(drv, dev);
@@ -150,7 +187,7 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 	data->predicted_us = div_round64(data->expected_us * data->correction_factor[data->bucket],
 					 RESOLUTION * DECAY);
 
-	detect_repeating_patterns(data);
+	repeat = detect_repeating_patterns(data);
 
 	if (data->expected_us > 5 &&
 		dev->states_usage[CPUIDLE_DRIVER_STATE_START].disable == 0)
@@ -162,8 +199,10 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 
 		if (su->disable)
 			continue;
-		if (s->target_residency > data->predicted_us)
+		if (s->target_residency > data->predicted_us) {
+			low_predicted = 1;
 			continue;
+		}
 		if (s->exit_latency > latency_req)
 			continue;
 		if (s->exit_latency * multiplier > data->predicted_us)
@@ -173,6 +212,27 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
 			power_usage = s->power_usage;
 			data->last_state_idx = i;
 			data->exit_us = s->exit_latency;
+		}
+	}
+
+	/* not deepest C-state chosen for low predicted residency */
+	if (low_predicted) {
+		unsigned int timer_us = 0;
+
+		/*
+		 * Set a timer to detect whether this sleep is much
+		 * longer than repeat mode predicted.  If the timer
+		 * triggers, the code will evaluate whether to put
+		 * the CPU into a deeper C-state.
+		 * The timer is cancelled on CPU wakeup.
+		 */
+		timer_us = 2 * (data->predicted_us + MAX_DEVIATION);
+
+		if (repeat && (4 * timer_us < data->expected_us)) {
+			hrtimer_start(hrtmr, ns_to_ktime(1000 * timer_us),
+				HRTIMER_MODE_REL_PINNED);
+			/* In repeat case, menu hrtimer is started */
+			per_cpu(hrtimer_status, cpu) = MENU_HRTIMER_REPEAT;
 		}
 	}
 
@@ -231,6 +291,9 @@ static int menu_enable_device(struct cpuidle_driver *drv,
 				struct cpuidle_device *dev)
 {
 	struct menu_device *data = &per_cpu(menu_devices, dev->cpu);
+	struct hrtimer *t = &per_cpu(menu_hrtimer, dev->cpu);
+	hrtimer_init(t, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	t->function = menu_hrtimer_notify;
 
 	memset(data, 0, sizeof(struct menu_device));
 
