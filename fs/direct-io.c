@@ -83,30 +83,17 @@ struct dio {
 	loff_t i_size;			
 	dio_iodone_t *end_io;		
 
-	void *private;			
-
-<<<<<<< HEAD
+	void *private;
 	
-	spinlock_t bio_lock;		
-	int page_errors;		
-	int is_async;			
-	int io_error;			
-	unsigned long refcount;		
-	struct bio *bio_list;		
-	struct task_struct *waiter;	
-=======
-	/* BIO completion state */
-	spinlock_t bio_lock;		/* protects BIO fields below */
-	int page_errors;		/* errno from get_user_pages() */
-	int is_async;			/* is IO async ? */
-	int should_dirty;		/* should we mark read pages dirty? */
-	int io_error;			/* IO error in completion path */
-	unsigned long refcount;		/* direct_io_worker() and bios */
-	struct bio *bio_list;		/* singly linked via bi_private */
-	struct task_struct *waiter;	/* waiting task (NULL if none) */
->>>>>>> 4114ec8... dio: add bio_vec support to __blockdev_direct_IO()
+	spinlock_t bio_lock;
+	int page_errors;
+	int is_async;
+	int should_dirty;
+	int io_error;
+	unsigned long refcount;
+	struct bio *bio_list;
+	struct task_struct *waiter;
 
-	
 	struct kiocb *iocb;		
 	ssize_t result;                 
 
