@@ -1767,21 +1767,12 @@ generic_file_buffered_write(struct kiocb *iocb, const struct iovec *iov,
 }
 EXPORT_SYMBOL(generic_file_buffered_write);
 
-<<<<<<< HEAD
-ssize_t __generic_file_aio_write(struct kiocb *iocb, const struct iovec *iov,
-				 unsigned long nr_segs, loff_t *ppos)
-{
-	struct file *file = iocb->ki_filp;
-	struct address_space * mapping = file->f_mapping;
-	size_t ocount;		
-	size_t count;		
-
 ssize_t __generic_file_write_iter(struct kiocb *iocb, struct iov_iter *iter,
 				  loff_t *ppos)
 {
 	struct file *file = iocb->ki_filp;
 	struct address_space * mapping = file->f_mapping;
-	size_t count;
+	size_t count;		
 	struct inode 	*inode = mapping->host;
 	loff_t		pos;
 	ssize_t		written;
@@ -1862,7 +1853,6 @@ out:
 	current->backing_dev_info = NULL;
 	return written ? written : err;
 }
-EXPORT_SYMBOL(__generic_file_write_iter);
 
 ssize_t generic_file_write_iter(struct kiocb *iocb, struct iov_iter *iter,
 				loff_t pos)
