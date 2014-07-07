@@ -5629,7 +5629,8 @@ free_ordered:
 }
 
 static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *iocb,
-			struct iov_iter *iter, loff_t offset)
+			const struct iovec *iov, loff_t offset,
+			unsigned long nr_segs)
 {
 	int seg;
 	int i;
@@ -5643,44 +5644,29 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
 		goto out;
 
 	
-	if (iov_iter_has_iovec(iter)) {
-		const struct iovec *iov = iov_iter_iovec(iter);
-
-		for (seg = 0; seg < iter->nr_segs; seg++) {
-			addr = (unsigned long)iov[seg].iov_base;
-				size = iov[seg].iov_len;
-			end += size;
-			if ((addr & blocksize_mask) || (size & blocksize_mask))
-				goto out;
+	for (seg = 0; seg < nr_segs; seg++) {
+		addr = (unsigned long)iov[seg].iov_base;
+		size = iov[seg].iov_len;
+		end += size;
+		if ((addr & blocksize_mask) || (size & blocksize_mask))
+			goto out;
 
 		
-			if (rw & WRITE)
-				continue;
+		if (rw & WRITE)
+			continue;
 
-		for (i = seg + 1; i < iter->nr_segs; i++) {
-				if (iov[seg].iov_base == iov[i].iov_base)
-					goto out;
-			}
-		}
-	} else if (iov_iter_has_bvec(iter)) {
-		struct bio_vec *bvec = iov_iter_bvec(iter);
-
-		for (seg = 0; seg < iter->nr_segs; seg++) {
-			addr = (unsigned long)bvec[seg].bv_offset;
-			size = bvec[seg].bv_len;
-			end += size;
-			if ((addr & blocksize_mask) || (size & blocksize_mask))
+		for (i = seg + 1; i < nr_segs; i++) {
+			if (iov[seg].iov_base == iov[i].iov_base)
 				goto out;
 		}
-	} else
-		BUG();
-
+	}
 	retval = 0;
 out:
 	return retval;
 }
 static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
-			struct iov_iter *iter, loff_t offset)
+			const struct iovec *iov, loff_t offset,
+			unsigned long nr_segs)
 {
 	struct file *file = iocb->ki_filp;
 	struct inode *inode = file->f_mapping->host;
@@ -5692,7 +5678,8 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
 	int write_bits = 0;
 	size_t count = iov_length(iov, nr_segs);
 
-	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iter, offset))
+	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iov,
+			    offset, nr_segs)) {
 		return 0;
 	}
 
@@ -5737,17 +5724,17 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
 
 	ret = __blockdev_direct_IO(rw, iocb, inode,
 		   BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
-		   iter, offset, btrfs_get_blocks_direct, NULL,
+		   iov, offset, nr_segs, btrfs_get_blocks_direct, NULL,
 		   btrfs_submit_direct, 0);
 
 	if (ret < 0 && ret != -EIOCBQUEUED) {
 		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
-			      offset + iov_iter_count(iter) - 1,
+			      offset + iov_length(iov, nr_segs) - 1,
 			      EXTENT_LOCKED | write_bits, 1, 0,
 			      &cached_state, GFP_NOFS);
-	} else if (ret >= 0 && ret < iov_iter_count(iter)) {
+	} else if (ret >= 0 && ret < iov_length(iov, nr_segs)) {
 		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset + ret,
-			      offset + iov_iter_count(iter) - 1,
+			      offset + iov_length(iov, nr_segs) - 1,
 			      EXTENT_LOCKED | write_bits, 1, 0,
 			      &cached_state, GFP_NOFS);
 	}
