@@ -609,6 +609,8 @@ static int __init vfp_init(void)
 	}
 
 #ifdef CONFIG_PROC_FS
+	static struct proc_dir_entry *procfs_entry;
+
 	procfs_entry = proc_create("cpu/vfp_bounce", S_IRUGO, NULL,
 			&vfp_bounce_fops);
 	if (!procfs_entry)
@@ -619,3 +621,4 @@ static int __init vfp_init(void)
 }
 
 core_initcall(vfp_init);
+rootfs_initcall(vfp_rootfs_init);
