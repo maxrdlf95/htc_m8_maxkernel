@@ -449,6 +449,7 @@ static inline struct bio_vec *iov_iter_bvec(struct iov_iter *i)
 {
 	BUG_ON(!iov_iter_has_bvec(i));
 	return (struct bio_vec *)i->data;
+}
 #endif
 
 extern struct iov_iter_ops ii_iovec_ops;
